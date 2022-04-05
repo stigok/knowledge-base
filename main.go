@@ -175,17 +175,12 @@ func (app *App) UpdatePost(patch Post) (*Post, error) {
 }
 
 type Post struct {
-	ID      string
-	Title   string
-	Content string
-	//Tags         []Tag
+	ID           string
+	Title        string
+	Content      string
+	Tags         []string
 	CreatedTime  time.Time
 	ModifiedTime time.Time
-}
-
-type Tag struct {
-	ID   int
-	Name string
 }
 
 func main() {

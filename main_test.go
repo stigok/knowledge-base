@@ -62,6 +62,10 @@ func TestCreatePost(t *testing.T) {
 	p, err := app.CreatePost(Post{
 		Title:   "title",
 		Content: "content",
+		Tags: []string{
+			"foo",
+			"bar",
+		},
 	})
 	is.NoErr(err)
 	is.True(p.ID != "")
@@ -69,6 +73,10 @@ func TestCreatePost(t *testing.T) {
 	is.Equal(p.Content, "content")
 	is.True(p.CreatedTime != time.Time{})
 	is.True(p.ModifiedTime != time.Time{})
+
+	is.Equal(len(p.Tags), 2)
+	is.Equal(p.Tags[0], "foo")
+	is.Equal(p.Tags[1], "bar")
 }
 
 func TestUpdatePost(t *testing.T) {
@@ -161,6 +169,21 @@ func TestHTTP(t *testing.T) {
 					p.Content == "Bar" &&
 					p.CreatedTime != time.Time{} &&
 					p.ModifiedTime != time.Time{}
+			},
+		},
+		{
+			http.MethodPost, "/posts", []byte(`{"title": "Foo", "content": "Bar", "tags": ["foo", "bar"]}`),
+			201, func(b []byte) bool {
+				var p Post
+				json.Unmarshal(b, &p)
+				return p.ID != "" &&
+					p.Title == "Foo" &&
+					p.Content == "Bar" &&
+					p.CreatedTime != time.Time{} &&
+					p.ModifiedTime != time.Time{} &&
+					len(p.Tags) == 2 &&
+					p.Tags[0] == "foo" &&
+					p.Tags[1] == "bar"
 			},
 		},
 	}
