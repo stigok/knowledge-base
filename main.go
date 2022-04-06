@@ -11,6 +11,7 @@ import (
 	"os"
 	"path"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -26,6 +27,15 @@ type App struct {
 	ListenAddr string
 
 	postTemplate *template.Template
+}
+
+type Post struct {
+	ID           string
+	Title        string
+	Content      string
+	Tags         []string
+	CreatedTime  time.Time
+	ModifiedTime time.Time
 }
 
 func (app *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -51,6 +61,7 @@ func (app *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		// Get all posts
 		if reqPath == "/posts/" {
 			posts, err := app.ListPosts()
 			if err != nil {
@@ -75,6 +86,22 @@ func (app *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 
 			b, err := json.Marshal(post)
+			if err != nil {
+				handleLog(err, http.StatusInternalServerError, "")
+			}
+
+			w.Write(b)
+			return
+		}
+
+		// Get all tags
+		if reqPath == "/tags/" {
+			tags, err := app.ListTags()
+			if err != nil {
+				handleLog(err, http.StatusInternalServerError, "")
+			}
+
+			b, err := json.Marshal(tags)
 			if err != nil {
 				handleLog(err, http.StatusInternalServerError, "")
 			}
@@ -223,13 +250,26 @@ func (app *App) UpdatePost(patch Post) (*Post, error) {
 	return p, nil
 }
 
-type Post struct {
-	ID           string
-	Title        string
-	Content      string
-	Tags         []string
-	CreatedTime  time.Time
-	ModifiedTime time.Time
+func (app *App) ListTags() ([]string, error) {
+	posts, err := app.ListPosts()
+	if err != nil {
+		return nil, fmt.Errorf("ListTags: %w", err)
+	}
+
+	uniqueTags := make(map[string]bool)
+	for _, p := range posts {
+		for _, tag := range p.Tags {
+			uniqueTags[tag] = true
+		}
+	}
+
+	var tags []string
+	for tag, _ := range uniqueTags {
+		tags = append(tags, tag)
+	}
+	sort.Strings(tags)
+
+	return tags, nil
 }
 
 func main() {

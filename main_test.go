@@ -135,6 +135,36 @@ func TestUpdatePost(t *testing.T) {
 	is.Equal(p.Content, "bar")
 }
 
+func TestListTags(t *testing.T) {
+	is := is.New(t)
+
+	dir, err := os.MkdirTemp("", "")
+	is.NoErr(err)
+	defer os.RemoveAll(dir)
+
+	app := App{
+		Root: dir,
+	}
+
+	for i := 0; i < 10; i++ {
+		_, err = app.CreatePost(Post{
+			Title:   fmt.Sprintf("title%d", i),
+			Content: fmt.Sprintf("content%d", i),
+			// Add one new tag per post, and one shared
+			Tags: []string{fmt.Sprintf("tag%d", i), "shared"},
+		})
+		is.NoErr(err)
+	}
+
+	tags, err := app.ListTags()
+	is.NoErr(err)
+	is.True(tags != nil)
+	is.Equal(len(tags), 11)
+	is.Equal(tags[0], "shared")
+	is.Equal(tags[1], "tag0")
+	is.Equal(tags[2], "tag1")
+}
+
 func TestHTTP(t *testing.T) {
 	is := is.New(t)
 
@@ -153,6 +183,7 @@ func TestHTTP(t *testing.T) {
 		p, err := app.CreatePost(Post{
 			Title:   fmt.Sprintf("title%d", i),
 			Content: fmt.Sprintf("content%d", i),
+			Tags:    []string{fmt.Sprintf("tag%d", i)},
 		})
 		is.NoErr(err)
 		posts = append(posts, p)
@@ -225,6 +256,17 @@ func TestHTTP(t *testing.T) {
 					len(p.Tags) == 2 &&
 					p.Tags[0] == "foo" &&
 					p.Tags[1] == "bar"
+			},
+		},
+		//
+		// Tags
+		//
+		{
+			http.MethodGet, "/tags/", nil,
+			200, func(b []byte) bool {
+				var tags []string
+				json.Unmarshal(b, &tags)
+				return len(tags) >= 10
 			},
 		},
 	}
