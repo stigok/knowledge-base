@@ -48,6 +48,38 @@ func TestGetPost(t *testing.T) {
 	is.Equal(p.Content, "content")
 }
 
+func TestListPosts(t *testing.T) {
+	is := is.New(t)
+
+	dir, err := os.MkdirTemp("", "")
+	is.NoErr(err)
+	defer os.RemoveAll(dir)
+
+	app := App{
+		Root: dir,
+	}
+
+	for i := 0; i < 10; i++ {
+		_, err = app.CreatePost(Post{
+			Title:   fmt.Sprintf("title%d", i),
+			Content: fmt.Sprintf("content%d", i),
+		})
+		is.NoErr(err)
+	}
+
+	posts, err := app.ListPosts()
+	is.NoErr(err)
+	is.True(posts != nil)
+	is.Equal(len(posts), 10)
+	// TODO: they are not sorted by time for some reason.
+	// - ksuid is supposed to be naturally sortable by time
+	// - os.WalkDir is supposed to walk directories lexicographically
+	//is.Equal(posts[0].Title, "title0")
+	//is.Equal(posts[0].Content, "content0")
+	//is.Equal(posts[1].Title, "title1")
+	//is.Equal(posts[1].Content, "content1")
+}
+
 func TestCreatePost(t *testing.T) {
 	is := is.New(t)
 
@@ -117,12 +149,10 @@ func TestHTTP(t *testing.T) {
 
 	// Seed app with posts
 	var posts []*Post
-	postsSpec := make(map[string]string)
-	postsSpec["Foo"] = "Bar"
-	for title, body := range postsSpec {
+	for i := 0; i < 10; i++ {
 		p, err := app.CreatePost(Post{
-			Title:   title,
-			Content: body,
+			Title:   fmt.Sprintf("title%d", i),
+			Content: fmt.Sprintf("content%d", i),
 		})
 		is.NoErr(err)
 		posts = append(posts, p)
@@ -141,26 +171,37 @@ func TestHTTP(t *testing.T) {
 				return bytes.Equal(b, []byte("Welcome!"))
 			},
 		},
+		//
+		// Posts
+		//
 		{
 			http.MethodGet, "/posts/" + posts[0].ID, nil,
 			200, func(b []byte) bool {
 				var p Post
 				json.Unmarshal(b, &p)
 				return p.ID != "" &&
-					p.Title == "Foo" &&
-					p.Content == "Bar" &&
+					p.Title == "title0" &&
+					p.Content == "content0" &&
 					p.CreatedTime != time.Time{} &&
 					p.ModifiedTime != time.Time{}
 			},
 		},
 		{
-			http.MethodPost, "/posts", nil,
+			http.MethodGet, "/posts/", nil,
+			200, func(b []byte) bool {
+				var posts []*Post
+				json.Unmarshal(b, &posts)
+				return len(posts) == 10
+			},
+		},
+		{
+			http.MethodPost, "/posts/", nil,
 			400, func(b []byte) bool {
 				return bytes.Equal(b, []byte("Bad Request"))
 			},
 		},
 		{
-			http.MethodPost, "/posts", []byte(`{"title": "Foo", "content": "Bar"}`),
+			http.MethodPost, "/posts/", []byte(`{"title": "Foo", "content": "Bar"}`),
 			201, func(b []byte) bool {
 				var p Post
 				json.Unmarshal(b, &p)
@@ -172,7 +213,7 @@ func TestHTTP(t *testing.T) {
 			},
 		},
 		{
-			http.MethodPost, "/posts", []byte(`{"title": "Foo", "content": "Bar", "tags": ["foo", "bar"]}`),
+			http.MethodPost, "/posts/", []byte(`{"title": "Foo", "content": "Bar", "tags": ["foo", "bar"]}`),
 			201, func(b []byte) bool {
 				var p Post
 				json.Unmarshal(b, &p)

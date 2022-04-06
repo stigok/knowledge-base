@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"html/template"
 	"io"
+	"io/fs"
 	"log"
 	"net/http"
 	"os"
 	"path"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/segmentio/ksuid"
@@ -49,6 +51,21 @@ func (app *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		if reqPath == "/posts/" {
+			posts, err := app.ListPosts()
+			if err != nil {
+				handleLog(err, http.StatusInternalServerError, "")
+			}
+
+			b, err := json.Marshal(posts)
+			if err != nil {
+				handleLog(err, http.StatusInternalServerError, "")
+			}
+
+			w.Write(b)
+			return
+		}
+
 		// Get post by id
 		if m := postPat.FindStringSubmatch(reqPath); m != nil {
 			post, err := app.GetPost(m[1])
@@ -69,7 +86,7 @@ func (app *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == http.MethodPost {
 		// Create post
-		if reqPath == "/posts" {
+		if reqPath == "/posts/" {
 			body, err := io.ReadAll(r.Body)
 			if err != nil {
 				handle(http.StatusNotFound, "")
@@ -128,15 +145,47 @@ func (app *App) GetPost(id string) (*Post, error) {
 	return post, nil
 }
 
+func (app *App) ListPosts() ([]*Post, error) {
+	fileSystem := os.DirFS(app.Root)
+
+	var posts []*Post
+
+	err := fs.WalkDir(fileSystem, ".", func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if path == "." {
+			return nil
+		}
+
+		id := strings.TrimSuffix(strings.TrimPrefix(path, "./"), ".json")
+		p, err := app.GetPost(id)
+		if err != nil {
+			return err
+		}
+
+		posts = append(posts, p)
+
+		return nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("ListPosts: %w", err)
+	}
+
+	return posts, nil
+}
+
 func (app *App) CreatePost(p Post) (*Post, error) {
-	id, err := ksuid.NewRandom()
+	now := time.Now()
+	id, err := ksuid.NewRandomWithTime(now)
 	if err != nil {
 		return nil, fmt.Errorf("CreatePost: %w", err)
 	}
 
 	p.ID = id.String()
-	p.CreatedTime = time.Now()
-	p.ModifiedTime = p.CreatedTime
+	p.CreatedTime = now
+	p.ModifiedTime = now
 
 	b, err := json.Marshal(p)
 	if err != nil {
