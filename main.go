@@ -18,6 +18,20 @@ import (
 	"github.com/segmentio/ksuid"
 )
 
+func main() {
+	app := &App{
+		Root:       "/tmp/knowledge-base",
+		ListenAddr: ":8080",
+	}
+
+	if err := app.SetupTemplates(); err != nil {
+		panic(err)
+	}
+
+	// TODO: configure server params
+	panic(http.ListenAndServe(app.ListenAddr, app))
+}
+
 const DefaultFileMode os.FileMode = 0640
 const PostTemplateString = `<h1>{{.Title}}</h1>
 {{.Content}}`
@@ -38,6 +52,7 @@ type Post struct {
 	ModifiedTime time.Time
 }
 
+// The main HTTP request router and handler.
 func (app *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	reqPath := r.URL.Path
 	postPat := regexp.MustCompile("^/posts/([a-zA-Z0-9]{27})/?$")
@@ -148,6 +163,7 @@ func (app *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Not found\n"))
 }
 
+// Initialise app HTML templates.
 func (app *App) SetupTemplates() error {
 	pt, err := template.New("post").Parse(PostTemplateString)
 	if err != nil {
@@ -157,6 +173,7 @@ func (app *App) SetupTemplates() error {
 	return nil
 }
 
+// Returns a single post by ID.
 func (app *App) GetPost(id string) (*Post, error) {
 	filepath := path.Join(app.Root, id)
 	b, err := os.ReadFile(filepath)
@@ -172,6 +189,7 @@ func (app *App) GetPost(id string) (*Post, error) {
 	return post, nil
 }
 
+// Returns a list of all posts.
 func (app *App) ListPosts() ([]*Post, error) {
 	fileSystem := os.DirFS(app.Root)
 
@@ -203,6 +221,7 @@ func (app *App) ListPosts() ([]*Post, error) {
 	return posts, nil
 }
 
+// Create a post. ID, CreatedTime and ModifiedTime will be overwritten if present.
 func (app *App) CreatePost(p Post) (*Post, error) {
 	now := time.Now()
 	id, err := ksuid.NewRandomWithTime(now)
@@ -227,6 +246,7 @@ func (app *App) CreatePost(p Post) (*Post, error) {
 	return &p, nil
 }
 
+// Updates a posts title and content. All other fields are ignored.
 func (app *App) UpdatePost(patch Post) (*Post, error) {
 	p, err := app.GetPost(patch.ID)
 	if err != nil {
@@ -250,6 +270,7 @@ func (app *App) UpdatePost(patch Post) (*Post, error) {
 	return p, nil
 }
 
+// Returns a list of all distinct tags of all posts.
 func (app *App) ListTags() ([]string, error) {
 	posts, err := app.ListPosts()
 	if err != nil {
@@ -270,18 +291,4 @@ func (app *App) ListTags() ([]string, error) {
 	sort.Strings(tags)
 
 	return tags, nil
-}
-
-func main() {
-	app := &App{
-		Root:       "/tmp/knowledge-base",
-		ListenAddr: ":8080",
-	}
-
-	if err := app.SetupTemplates(); err != nil {
-		panic(err)
-	}
-
-	// TODO: configure server params
-	panic(http.ListenAndServe(app.ListenAddr, app))
 }
