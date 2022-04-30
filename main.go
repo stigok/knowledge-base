@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
@@ -69,6 +70,13 @@ func (app *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == http.MethodGet {
+		// Serve static content
+		if strings.HasPrefix(reqPath, "/static/") {
+			staticHandler := http.StripPrefix("/static/", http.FileServer(http.Dir("./static/")))
+			staticHandler.ServeHTTP(w, r)
+			return
+		}
+
 		// Get home
 		if reqPath == "/" {
 			app.templates.ExecuteTemplate(w, "index.html", nil)
