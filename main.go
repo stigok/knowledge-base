@@ -34,14 +34,12 @@ func main() {
 }
 
 const DefaultFileMode os.FileMode = 0640
-const PostTemplateString = `<h1>{{.Title}}</h1>
-{{.Content}}`
 
 type App struct {
 	Root       string
 	ListenAddr string
 
-	postTemplate *template.Template
+	templates *template.Template
 }
 
 type Post struct {
@@ -73,7 +71,7 @@ func (app *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
 		// Get home
 		if reqPath == "/" {
-			handle(http.StatusOK, "Welcome!")
+			app.templates.ExecuteTemplate(w, "index.html", nil)
 			return
 		}
 
@@ -166,11 +164,7 @@ func (app *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // Initialise app HTML templates.
 func (app *App) SetupTemplates() error {
-	pt, err := template.New("post").Parse(PostTemplateString)
-	if err != nil {
-		return err
-	}
-	app.postTemplate = pt
+	app.templates = template.Must(template.ParseGlob(filepath.Join("templates", "*.html")))
 	return nil
 }
 
