@@ -29,6 +29,7 @@ func main() {
 	}
 
 	// TODO: configure server params
+	log.Println("Starting HTTP server on", app.ListenAddr)
 	panic(http.ListenAndServe(app.ListenAddr, app))
 }
 
