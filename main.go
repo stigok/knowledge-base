@@ -7,11 +7,11 @@ import (
 	"io"
 	"io/fs"
 	"log"
+	"mime"
 	"net/http"
 	"os"
 	"path"
 	"path/filepath"
-	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -20,27 +20,200 @@ import (
 )
 
 func main() {
-	app := &App{
-		Root:       "/tmp/knowledge-base",
-		ListenAddr: ":8080",
-	}
-
-	if err := app.SetupTemplates(); err != nil {
-		panic(err)
-	}
+	app := NewApp("/tmp/knowledge-base", "static/", ":8080")
 
 	// TODO: configure server params
-	log.Println("Starting HTTP server on", app.ListenAddr)
-	panic(http.ListenAndServe(app.ListenAddr, app))
+	log.Println("Starting HTTP server on", app.listenAddr)
+	panic(http.ListenAndServe(app.listenAddr, app))
 }
 
 const DefaultFileMode os.FileMode = 0640
 
 type App struct {
-	Root       string
-	ListenAddr string
+	staticRoot string
+	postsRoot  string
+	listenAddr string
 
+	router    *Router
 	templates *template.Template
+}
+
+func NewApp(postsRoot, staticRoot, listenAddr string) *App {
+	app := &App{
+		listenAddr: listenAddr,
+		postsRoot:  postsRoot,
+		staticRoot: staticRoot,
+		router:     &Router{},
+	}
+
+	// Templates
+	app.templates = template.Must(
+		template.New("all").ParseGlob(filepath.Join("templates", "*.html")))
+
+	// Routes
+	app.router.Use(app.LogHandler)
+	app.router.Use(app.StaticHandler)
+	app.router.Get("^/$", app.IndexHandler())
+
+	app.router.Get("^/posts/?$", app.CreatePostHandler())
+	app.router.Post("^/posts/?$", app.CreatePostHandler())
+	app.router.Get(`^/posts/(?P<id>\w+)$`, app.GetPostHandler())
+
+	return app
+}
+
+func (app *App) IndexHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		posts, err := app.ListPosts()
+		if err != nil {
+			http.Error(w, fmt.Sprintf("%v", err), 500)
+			return
+		}
+
+		locals := struct {
+			Posts []*Post
+		}{
+			Posts: posts,
+		}
+		if err := app.templates.ExecuteTemplate(w, "index.html", locals); err != nil {
+			log.Printf("error: template: %v", err)
+		}
+	}
+}
+
+func (app *App) CreatePostHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		log.Println("foo1")
+		// POST
+		if r.Method == http.MethodPost {
+			body, err := io.ReadAll(r.Body)
+			if err != nil {
+				log.Printf("error: CreatePostHandler: %v", err)
+				http.Error(w, fmt.Sprintf("%v", err), 400)
+				return
+			}
+
+			p := new(Post)
+			err = json.Unmarshal(body, p)
+			if err != nil {
+				log.Printf("error: CreatePostHandler: %v", err)
+				http.Error(w, fmt.Sprintf("%v", err), 400)
+				return
+			}
+
+			p, err = app.CreatePost(*p)
+			if err != nil {
+				log.Printf("error: CreatePostHandler: %v", err)
+				http.Error(w, fmt.Sprintf("%v", err), 400)
+				return
+			}
+
+			b, err := json.Marshal(p)
+			if err != nil {
+				log.Printf("error: CreatePostHandler: %v", err)
+				http.Error(w, fmt.Sprintf("%v", err), 500)
+				return
+			}
+
+			w.Header().Set("Location", "/posts/"+p.ID)
+			w.WriteHeader(http.StatusCreated)
+			w.Write(b)
+			return
+		}
+
+		// GET
+		log.Println("foo")
+		if err := app.templates.ExecuteTemplate(w, "create_post.html", nil); err != nil {
+			log.Printf("error: template: %v", err)
+		}
+	}
+}
+
+func (app *App) GetPostHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		postID := r.Context().Value("id").(string)
+
+		post, err := app.GetPost(postID)
+		if err != nil {
+			log.Printf("error: GetPostHandler: %v", err)
+			http.Error(w, fmt.Sprintf("%v", err), 400)
+			return
+		}
+
+		locals := struct {
+			Post *Post
+		}{
+			Post: post,
+		}
+		app.templates.ExecuteTemplate(w, "post.html", locals)
+	}
+}
+
+func (app *App) LogHandler(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("%s %s (body: %d bytes)\n", r.Method, r.URL.Path, r.ContentLength)
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (app *App) StaticHandler(next http.Handler) http.Handler {
+	cache := make(map[string][]byte)
+	fs := os.DirFS(app.staticRoot)
+	readFile := func(path string) ([]byte, error) {
+		if b, ok := cache[path]; ok {
+			return b, nil
+		}
+
+		f, err := fs.Open(path)
+		if err != nil {
+			// Remember that this file can't be opened for any reason
+			cache[path] = nil
+			return nil, err
+		}
+		defer f.Close()
+
+		b, err := io.ReadAll(f)
+		if err != nil {
+			// Remember that this file can't be read for any reason
+			cache[path] = nil
+			return nil, err
+		}
+
+		cache[path] = b
+		return b, nil
+	}
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !strings.HasPrefix(r.URL.Path, "/static/") {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		path := strings.TrimPrefix(r.URL.Path, "/static/")
+		b, err := readFile(path)
+		if err != nil {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		parts := strings.Split(filepath.Base(path), ".")
+		contentType := mime.TypeByExtension("." + parts[len(parts)-1])
+		if contentType == "" {
+			w.Header().Set("Content-Type", "text/plain")
+		} else {
+			w.Header().Set("Content-Type", contentType)
+		}
+
+		_, err = w.Write(b)
+		if err != nil {
+			log.Printf("error: StaticHandler: %v", err)
+		}
+	})
+}
+
+// The main HTTP request router and handler.
+func (app *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	app.router.ServeHTTP(w, r)
 }
 
 type Post struct {
@@ -52,133 +225,9 @@ type Post struct {
 	ModifiedTime time.Time
 }
 
-// The main HTTP request router and handler.
-func (app *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	reqPath := r.URL.Path
-	postPat := regexp.MustCompile("^/posts/([a-zA-Z0-9]{27})/?$")
-
-	handle := func(status int, format string, args ...interface{}) {
-		if format == "" {
-			format = http.StatusText(status)
-		}
-		w.WriteHeader(status)
-		fmt.Fprintf(w, format, args...)
-	}
-	handleLog := func(err error, status int, format string, args ...interface{}) {
-		log.Printf("error: %s %s %d - %v", r.Method, reqPath, r.ContentLength, err)
-		handle(status, format, args...)
-	}
-
-	if r.Method == http.MethodGet {
-		// Serve static content
-		if strings.HasPrefix(reqPath, "/static/") {
-			staticHandler := http.StripPrefix("/static/", http.FileServer(http.Dir("./static/")))
-			staticHandler.ServeHTTP(w, r)
-			return
-		}
-
-		// Get home
-		if reqPath == "/" {
-			app.templates.ExecuteTemplate(w, "index.html", nil)
-			return
-		}
-
-		// Get all posts
-		if reqPath == "/posts/" {
-			posts, err := app.ListPosts()
-			if err != nil {
-				handleLog(err, http.StatusInternalServerError, "")
-			}
-
-			b, err := json.Marshal(posts)
-			if err != nil {
-				handleLog(err, http.StatusInternalServerError, "")
-			}
-
-			w.Write(b)
-			return
-		}
-
-		// Get post by id
-		if m := postPat.FindStringSubmatch(reqPath); m != nil {
-			post, err := app.GetPost(m[1])
-			if err != nil {
-				handle(http.StatusNotFound, "")
-				return
-			}
-
-			b, err := json.Marshal(post)
-			if err != nil {
-				handleLog(err, http.StatusInternalServerError, "")
-			}
-
-			w.Write(b)
-			return
-		}
-
-		// Get all tags
-		if reqPath == "/tags/" {
-			tags, err := app.ListTags()
-			if err != nil {
-				handleLog(err, http.StatusInternalServerError, "")
-			}
-
-			b, err := json.Marshal(tags)
-			if err != nil {
-				handleLog(err, http.StatusInternalServerError, "")
-			}
-
-			w.Write(b)
-			return
-		}
-	}
-
-	if r.Method == http.MethodPost {
-		// Create post
-		if reqPath == "/posts/" {
-			body, err := io.ReadAll(r.Body)
-			if err != nil {
-				handle(http.StatusNotFound, "")
-				return
-			}
-
-			p := new(Post)
-			err = json.Unmarshal(body, p)
-			if err != nil {
-				handle(http.StatusBadRequest, "")
-				return
-			}
-
-			p, err = app.CreatePost(*p)
-			if err != nil {
-				handle(http.StatusBadRequest, "")
-				return
-			}
-
-			b, err := json.Marshal(p)
-			if err != nil {
-				handleLog(err, http.StatusInternalServerError, "")
-			}
-
-			w.WriteHeader(http.StatusCreated)
-			w.Write(b)
-			return
-		}
-	}
-
-	w.WriteHeader(http.StatusNotFound)
-	w.Write([]byte("Not found\n"))
-}
-
-// Initialise app HTML templates.
-func (app *App) SetupTemplates() error {
-	app.templates = template.Must(template.ParseGlob(filepath.Join("templates", "*.html")))
-	return nil
-}
-
 // Returns a single post by ID.
 func (app *App) GetPost(id string) (*Post, error) {
-	filepath := path.Join(app.Root, id)
+	filepath := path.Join(app.postsRoot, id)
 	b, err := os.ReadFile(filepath)
 	if err != nil {
 		return nil, fmt.Errorf("GetPost: %w", err)
@@ -194,7 +243,7 @@ func (app *App) GetPost(id string) (*Post, error) {
 
 // Returns a list of all posts.
 func (app *App) ListPosts() ([]*Post, error) {
-	fileSystem := os.DirFS(app.Root)
+	fileSystem := os.DirFS(app.postsRoot)
 
 	var posts []*Post
 
@@ -241,7 +290,7 @@ func (app *App) CreatePost(p Post) (*Post, error) {
 		return nil, fmt.Errorf("CreatePost: %w", err)
 	}
 
-	filepath := path.Join(app.Root, id.String())
+	filepath := path.Join(app.postsRoot, id.String())
 	if err := os.WriteFile(filepath, b, DefaultFileMode); err != nil {
 		return nil, fmt.Errorf("CreatePost: %w", err)
 	}
@@ -265,7 +314,7 @@ func (app *App) UpdatePost(patch Post) (*Post, error) {
 		return nil, fmt.Errorf("UpdatePost: %w", err)
 	}
 
-	filepath := path.Join(app.Root, p.ID)
+	filepath := path.Join(app.postsRoot, p.ID)
 	if err := os.WriteFile(filepath, b, DefaultFileMode); err != nil {
 		return nil, fmt.Errorf("UpdatePost: %w", err)
 	}

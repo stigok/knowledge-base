@@ -1,0 +1,118 @@
+{{ template "_header.html" }}
+
+<div id="post" class="post">
+  <article>
+    <header class="d-flex">
+      <div class="flex-item">
+        <input type="text" name="title" @input="update" value="{{ .Post.Title }}">
+      </div>
+      <!--<div class="flex-item d-flex align-items-center me-2">
+        <span class="badge bg-secondary me-1" v-for="tag in tags">
+          $( tag )
+          <button type="button" @click="removeTag(tag)" class="btn btn-sm btn-link text-white px-1 text-decoration-none">✕</button>
+        </span>
+      </div>
+      <div class="flex-item d-flex align-items-center">
+        <input class="form-control" list="datalistTags" placeholder="tag name" @keyup.enter="addTag">
+        <datalist id="datalistTags">
+          <option v-for="tag in allTags" :value="tag">$( tag )</option>
+        </datalist>
+      </div>-->
+    </header>
+    <div class="d-flex post-content">
+      <textarea class="post-editor" name="content" @input="update">{{ .Post.Content }}</textarea>
+      <div v-html="contentCompiled">
+      </div>
+    </div>
+    <footer class="text-muted">
+      <p>Created at 2020-08-01 15:44, updated at 2020-08-01 15:44 UTC+1</p>
+      <button type="button" class="btn btn-success btn-sm" @click="save">Save</button>
+    </footer>
+  </article>
+</div>
+
+<script>
+  /* global Vue */
+  /* global _ */
+  /* global DOMPurify */
+  /* global marked */
+  'use strict'
+
+  Vue.createApp({
+    delimiters: ['$(', ')'],
+    props: {
+      // All previously used tags to help with auto-completion
+      allTags: {
+        type: Array,
+        default: []
+      }
+    },
+    data: function() {
+      return {
+        title: "",
+        content: "",
+        contentCompiled: "",
+        tags: [],
+      }
+    },
+    methods: {
+      compileMarkdown: function() {
+        return marked.parse(this.content, {
+          sanitizer: (s) => DOMPurify.sanitize(s, {
+            USE_PROFILES: {
+              html: true
+            }
+          })
+        })
+      },
+      update: _.debounce(function(e) {
+        switch (e.target.name) {
+          case "title":
+            this.title = e.target.value
+            break
+          case "content":
+            this.content = e.target.value
+            this.contentCompiled = this.compileMarkdown()
+            break;
+        }
+      }, 300),
+      save: function() {
+        console.log("save")
+      },
+      addTag: function(e) {
+        const tag = e.target.value
+        if (this.tags.indexOf(tag) === -1) {
+          this.tags.push(tag)
+        }
+        e.target.value = ''
+      },
+      removeTag: function(tag) {
+        const idx = this.tags.indexOf(tag)
+        if (idx > -1) {
+          this.tags.splice(idx, 1)
+        }
+      },
+      save: function() {
+        fetch("/posts/", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              title: this.title,
+              content: this.content,
+            })
+          })
+          .then((res) => res.json())
+          .then((post) => {
+            this.postId = post.ID
+          }).catch((err) => {
+            console.error(err)
+          })
+      }
+    }
+  }).mount('#post')
+
+</script>
+
+{{ template "_footer.html" }}

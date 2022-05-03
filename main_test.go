@@ -23,7 +23,7 @@ func TestGetPost(t *testing.T) {
 	defer os.RemoveAll(dir)
 
 	app := App{
-		Root: dir,
+		postsRoot: dir,
 	}
 
 	f, err := os.CreateTemp(dir, "")
@@ -56,7 +56,7 @@ func TestListPosts(t *testing.T) {
 	defer os.RemoveAll(dir)
 
 	app := App{
-		Root: dir,
+		postsRoot: dir,
 	}
 
 	for i := 0; i < 10; i++ {
@@ -88,7 +88,7 @@ func TestCreatePost(t *testing.T) {
 	defer os.RemoveAll(dir)
 
 	app := App{
-		Root: dir,
+		postsRoot: dir,
 	}
 
 	p, err := app.CreatePost(Post{
@@ -119,7 +119,7 @@ func TestUpdatePost(t *testing.T) {
 	defer os.RemoveAll(dir)
 
 	app := App{
-		Root: dir,
+		postsRoot: dir,
 	}
 
 	p, err := app.CreatePost(Post{
@@ -143,7 +143,7 @@ func TestListTags(t *testing.T) {
 	defer os.RemoveAll(dir)
 
 	app := App{
-		Root: dir,
+		postsRoot: dir,
 	}
 
 	for i := 0; i < 10; i++ {
@@ -174,7 +174,7 @@ func TestHTTP(t *testing.T) {
 	defer os.RemoveAll(dir)
 
 	app := App{
-		Root: dir,
+		postsRoot: dir,
 	}
 
 	// Seed app with posts
