@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"html/template"
 	"io"
 	"io/fs"
 	"log"
@@ -14,8 +13,12 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"text/template"
 	"time"
 
+	"github.com/gomarkdown/markdown"
+	"github.com/gomarkdown/markdown/html"
+	"github.com/microcosm-cc/bluemonday"
 	"github.com/segmentio/ksuid"
 )
 
@@ -145,7 +148,9 @@ func (app *App) GetPostHandler() http.HandlerFunc {
 		}{
 			Post: post,
 		}
-		app.templates.ExecuteTemplate(w, "post.html", locals)
+		if err := app.templates.ExecuteTemplate(w, "post.html", locals); err != nil {
+			log.Printf("error: template: %v", err)
+		}
 	}
 }
 
@@ -237,6 +242,20 @@ func (app *App) GetPost(id string) (*Post, error) {
 	if err := json.Unmarshal(b, post); err != nil {
 		return nil, fmt.Errorf("GetPost: %w", err)
 	}
+
+	s := post.Content
+
+	// Render HTML from markdown
+	renderer := html.NewRenderer(
+		html.RendererOptions{Flags: html.CommonFlags | html.HrefTargetBlank},
+	)
+	s = string(markdown.ToHTML([]byte(s), nil, renderer))
+
+	// Sanitize
+	bm := bluemonday.UGCPolicy()
+	s = bm.Sanitize(s)
+
+	post.Content = s
 
 	return post, nil
 }
