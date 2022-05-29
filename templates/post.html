@@ -1,16 +1,16 @@
 {{ template "_header.html" }}
 
-<div class="container-fluid">
-  <header class="d-flex bg-gray">
-    <div class="flex-grow-1">
-      <h1>{{ .Post.Title }}</h1>
-      <h2 class="h5 small">Created: {{ .Post.CreatedTime }}, modified: {{ .Post.ModifiedTime }} </h2>
-    </div>
-    <div>
-      <a href="/posts/{{ .Post.ID }}/edit" class="btn btn-small btn-outline-dark" role="button">Edit</a>
-    </div>
-  </header>
+<header class="d-flex p-3 bg-dark bg-opacity-25 mb-3">
+  <div class="flex-grow-1">
+    <h1 class="h4">Title: {{ .Post.Title }}</h1>
+    <h2 class="h5 small">Created: {{ .Post.CreatedTime }}, modified: {{ .Post.ModifiedTime }} </h2>
+  </div>
+  <div>
+    <a href="/posts/{{ .Post.ID }}/edit" class="btn btn-small btn-outline-dark" role="button">Edit</a>
+  </div>
+</header>
 
+<div class="container-fluid">
   <article>
     {{ .ContentHTML }}
   </article>
