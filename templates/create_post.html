@@ -1,13 +1,14 @@
 {{ template "_header.html" }}
 
-<div id="post" class="post">
-  <article>
-    <header class="d-flex">
-      <span>Title</span>
-      <div class="flex-item">
-        <input type="text" name="title" @input="update" value="{{ .Post.Title }}">
-      </div>
-      <!--<div class="flex-item d-flex align-items-center me-2">
+<div class="container-fluid">
+  <div id="post" class="post">
+    <article>
+      <header class="d-flex">
+        <span>Title</span>
+        <div class="flex-item">
+          <input type="text" name="title" @input="update" value="{{ .Post.Title }}">
+        </div>
+        <!--<div class="flex-item d-flex align-items-center me-2">
       <span class="badge bg-secondary me-1" v-for="tag in tags">
         $( tag )
         <button type="button" @click="removeTag(tag)" class="btn btn-sm btn-link text-white px-1 text-decoration-none">✕</button>
@@ -19,17 +20,18 @@
         <option v-for="tag in allTags" :value="tag">$( tag )</option>
       </datalist>
     </div>-->
-    </header>
-    <div class="d-flex post-content">
-      <textarea class="post-editor" name="content" @input="update">{{ .Post.Content }}</textarea>
-      <div v-html="contentCompiled">
+      </header>
+      <div class="d-flex post-content">
+        <textarea class="post-editor" name="content" @input="update">{{ .Post.Content }}</textarea>
+        <div v-html="contentCompiled">
+        </div>
       </div>
-    </div>
-    <footer class="text-muted">
-      <p>Created at 2020-08-01 15:44, updated at 2020-08-01 15:44 UTC+1</p>
-      <button type="button" class="btn btn-success btn-sm" @click="save">Save</button>
-    </footer>
-  </article>
+      <footer class="text-muted">
+        <p>Created at 2020-08-01 15:44, updated at 2020-08-01 15:44 UTC+1</p>
+        <button type="button" class="btn btn-success btn-sm" @click="save">Save</button>
+      </footer>
+    </article>
+  </div>
 </div>
 
 <script>
