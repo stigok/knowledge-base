@@ -2,7 +2,7 @@
 
 {{ range .Posts }}
 <div>
-  <strong>{{ .CreatedTime }}</strong> <a href="/posts/{{ .ID }}">{{ .Title }}</a>
+  <a href="/posts/{{ .ID }}"><strong>{{ .Title }}</strong> <small>{{ .CreatedTime }}</small></a>
 </div>
 {{ else }}
 <p>No posts to show.</p>
