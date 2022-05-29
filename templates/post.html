@@ -1,6 +1,6 @@
 {{ template "_header.html" }}
 
-<div class="d-flex">
+<header class="d-flex bg-gray">
   <div class="flex-grow-1">
     <h1>{{ .Post.Title }}</h1>
     <h2 class="h5 small">Created: {{ .Post.CreatedTime }}, modified: {{ .Post.ModifiedTime }} </h2>
@@ -8,7 +8,7 @@
   <div>
     <a href="/posts/{{ .Post.ID }}/edit" class="btn btn-small btn-outline-dark" role="button">Edit</a>
   </div>
-</div>
+</header>
 
 <article>
   {{ .ContentHTML }}
