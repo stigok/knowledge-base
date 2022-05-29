@@ -7,17 +7,17 @@
         <input type="text" name="title" @input="update" value="{{ .Post.Title }}">
       </div>
       <!--<div class="flex-item d-flex align-items-center me-2">
-        <span class="badge bg-secondary me-1" v-for="tag in tags">
-          $( tag )
-          <button type="button" @click="removeTag(tag)" class="btn btn-sm btn-link text-white px-1 text-decoration-none">✕</button>
-        </span>
-      </div>
-      <div class="flex-item d-flex align-items-center">
-        <input class="form-control" list="datalistTags" placeholder="tag name" @keyup.enter="addTag">
-        <datalist id="datalistTags">
-          <option v-for="tag in allTags" :value="tag">$( tag )</option>
-        </datalist>
-      </div>-->
+      <span class="badge bg-secondary me-1" v-for="tag in tags">
+        $( tag )
+        <button type="button" @click="removeTag(tag)" class="btn btn-sm btn-link text-white px-1 text-decoration-none">✕</button>
+      </span>
+    </div>
+    <div class="flex-item d-flex align-items-center">
+      <input class="form-control" list="datalistTags" placeholder="tag name" @keyup.enter="addTag">
+      <datalist id="datalistTags">
+        <option v-for="tag in allTags" :value="tag">$( tag )</option>
+      </datalist>
+    </div>-->
     </header>
     <div class="d-flex post-content">
       <textarea class="post-editor" name="content" @input="update">{{ .Post.Content }}</textarea>
@@ -93,15 +93,12 @@
         }
       },
       save: function() {
-        fetch("/posts/", {
+        fetch(window.location.pathname, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({
-              title: this.title,
-              content: this.content,
-            })
+            body: JSON.stringify(this.$data)
           })
           .then((res) => res.json())
           .then((post) => {

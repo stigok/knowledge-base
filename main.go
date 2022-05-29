@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"io"
 	"io/fs"
 	"log"
@@ -13,7 +14,6 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
-	"text/template"
 	"time"
 
 	"github.com/gomarkdown/markdown"
@@ -61,6 +61,8 @@ func NewApp(postsRoot, staticRoot, listenAddr string) *App {
 	app.router.Get("^/posts/?$", app.CreatePostHandler())
 	app.router.Post("^/posts/?$", app.CreatePostHandler())
 	app.router.Get(`^/posts/(?P<id>\w+)$`, app.GetPostHandler())
+	app.router.Get(`^/posts/(?P<id>\w+)/edit$`, app.EditPostHandler())
+	app.router.Post(`^/posts/(?P<id>\w+)/edit$`, app.EditPostHandler())
 
 	return app
 }
@@ -79,6 +81,66 @@ func (app *App) IndexHandler() http.HandlerFunc {
 			Posts: posts,
 		}
 		if err := app.templates.ExecuteTemplate(w, "index.html", locals); err != nil {
+			log.Printf("error: template: %v", err)
+		}
+	}
+}
+
+func (app *App) EditPostHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		postID := r.Context().Value("id").(string)
+		p, err := app.GetPost(postID)
+		if err != nil {
+			log.Printf("error: EditPostHandler: %v", err)
+			http.Error(w, fmt.Sprintf("%v", err), 404)
+			return
+		}
+
+		// POST
+		if r.Method == http.MethodPost {
+			body, err := io.ReadAll(r.Body)
+			if err != nil {
+				log.Printf("error: EditPostHandler: %v", err)
+				http.Error(w, fmt.Sprintf("%v", err), 400)
+				return
+			}
+
+			changes := new(Post)
+			err = json.Unmarshal(body, p)
+			if err != nil {
+				log.Printf("error: EditPostHandler: %v", err)
+				http.Error(w, fmt.Sprintf("%v", err), 400)
+				return
+			}
+
+			changes.ID = p.ID
+			p, err := app.UpdatePost(*changes)
+			if err != nil {
+				log.Printf("error: EditPostHandler: %v", err)
+				http.Error(w, fmt.Sprintf("%v", err), 400)
+				return
+			}
+
+			b, err := json.Marshal(p)
+			if err != nil {
+				log.Printf("error: EditPostHandler: %v", err)
+				http.Error(w, fmt.Sprintf("%v", err), 500)
+				return
+			}
+
+			w.Header().Set("Location", "/posts/"+p.ID)
+			w.WriteHeader(http.StatusSeeOther)
+			w.Write(b)
+			return
+		}
+
+		// GET
+		locals := struct {
+			Post *Post
+		}{
+			Post: p,
+		}
+		if err := app.templates.ExecuteTemplate(w, "create_post.html", locals); err != nil {
 			log.Printf("error: template: %v", err)
 		}
 	}
@@ -132,6 +194,11 @@ func (app *App) CreatePostHandler() http.HandlerFunc {
 	}
 }
 
+type GetPostResponse struct {
+	*Post
+	ContentHTML template.HTML
+}
+
 func (app *App) GetPostHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		postID := r.Context().Value("id").(string)
@@ -143,10 +210,19 @@ func (app *App) GetPostHandler() http.HandlerFunc {
 			return
 		}
 
-		locals := struct {
-			Post *Post
-		}{
-			Post: post,
+		// Render HTML from markdown
+		renderer := html.NewRenderer(
+			html.RendererOptions{Flags: html.CommonFlags | html.HrefTargetBlank},
+		)
+		s := string(markdown.ToHTML([]byte(post.Content), nil, renderer))
+
+		// Sanitize
+		bm := bluemonday.UGCPolicy()
+		s = bm.Sanitize(s)
+
+		locals := GetPostResponse{
+			Post:        post,
+			ContentHTML: template.HTML(s),
 		}
 		if err := app.templates.ExecuteTemplate(w, "post.html", locals); err != nil {
 			log.Printf("error: template: %v", err)
@@ -243,20 +319,6 @@ func (app *App) GetPost(id string) (*Post, error) {
 		return nil, fmt.Errorf("GetPost: %w", err)
 	}
 
-	s := post.Content
-
-	// Render HTML from markdown
-	renderer := html.NewRenderer(
-		html.RendererOptions{Flags: html.CommonFlags | html.HrefTargetBlank},
-	)
-	s = string(markdown.ToHTML([]byte(s), nil, renderer))
-
-	// Sanitize
-	bm := bluemonday.UGCPolicy()
-	s = bm.Sanitize(s)
-
-	post.Content = s
-
 	return post, nil
 }
 
@@ -315,6 +377,11 @@ func (app *App) CreatePost(p Post) (*Post, error) {
 	}
 
 	return &p, nil
+}
+
+type UpdatePostRequest struct {
+	Title   string
+	Content string
 }
 
 // Updates a posts title and content. All other fields are ignored.
