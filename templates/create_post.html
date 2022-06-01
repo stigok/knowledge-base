@@ -102,6 +102,8 @@
           .then((res) => res.json())
           .then((post) => {
             this.postId = post.ID
+            const loc = window.location
+            window.location.href = loc.protocol + "//" + loc.host + "/posts/" + post.ID
           }).catch((err) => {
             console.error(err)
           })
