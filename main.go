@@ -63,6 +63,7 @@ func NewApp(postsRoot, staticRoot, listenAddr string) *App {
 	app.router.Get(`^/posts/(?P<id>\w+)$`, app.GetPostHandler())
 	app.router.Get(`^/posts/(?P<id>\w+)/edit$`, app.EditPostHandler())
 	app.router.Post(`^/posts/(?P<id>\w+)/edit$`, app.EditPostHandler())
+	app.router.Post(`^/render-markdown$`, app.RenderMarkdownHandler())
 
 	return app
 }
@@ -298,6 +299,39 @@ func (app *App) StaticHandler(next http.Handler) http.Handler {
 			log.Printf("error: StaticHandler: %v", err)
 		}
 	})
+}
+
+type RenderMarkdownRequest struct {
+	Markdown string
+}
+
+func (app *App) RenderMarkdownHandler() http.HandlerFunc {
+	renderer := html.NewRenderer(
+		html.RendererOptions{Flags: html.CommonFlags | html.HrefTargetBlank},
+	)
+	bm := bluemonday.UGCPolicy()
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		defer r.Body.Close()
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			log.Printf("error: RenderMarkdownHandler: %v", err)
+			http.Error(w, fmt.Sprintf("%v", err), 400)
+			return
+		}
+
+		req := new(RenderMarkdownRequest)
+		if err := json.Unmarshal(body, req); err != nil {
+			log.Printf("error: RenderMarkdownHandler: %v", err)
+			http.Error(w, fmt.Sprintf("%v", err), 400)
+			return
+		}
+
+		s := string(markdown.ToHTML([]byte(req.Markdown), nil, renderer))
+		s = bm.Sanitize(s)
+		w.Header().Set("Content-Type", "text/html")
+		fmt.Fprintf(w, "%s", s)
+	}
 }
 
 // The main HTTP request router and handler.

@@ -62,15 +62,31 @@
       this.update()
     },
     methods: {
-      // TODO: use server side rendering
       compileMarkdown: function() {
-        return marked.parse(this.content, {
-          sanitizer: (s) => DOMPurify.sanitize(s, {
-            USE_PROFILES: {
-              html: true
-            }
+        fetch("/render-markdown", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              Markdown: this.content,
+            })
           })
-        })
+          .then((res) => {
+            if (res.status !== 200) {
+              return Promise.reject({
+                msg: "failed to render markdown",
+                res
+              })
+            }
+            return res.text()
+          })
+          .then((html) => {
+            this.contentCompiled = html
+          })
+          .catch((err) => {
+            console.error(err)
+          })
       },
       update: _.debounce(function() {
         this.contentCompiled = this.compileMarkdown()
