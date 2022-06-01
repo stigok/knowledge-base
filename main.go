@@ -86,10 +86,15 @@ func (app *App) IndexHandler() http.HandlerFunc {
 	}
 }
 
+type UpdatePostRequest struct {
+	Title   string
+	Content string
+}
+
 func (app *App) EditPostHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		postID := r.Context().Value("id").(string)
-		p, err := app.GetPost(postID)
+		post, err := app.GetPost(postID)
 		if err != nil {
 			log.Printf("error: EditPostHandler: %v", err)
 			http.Error(w, fmt.Sprintf("%v", err), 404)
@@ -105,31 +110,33 @@ func (app *App) EditPostHandler() http.HandlerFunc {
 				return
 			}
 
-			changes := new(Post)
-			err = json.Unmarshal(body, p)
+			req := new(UpdatePostRequest)
+			err = json.Unmarshal(body, req)
 			if err != nil {
 				log.Printf("error: EditPostHandler: %v", err)
 				http.Error(w, fmt.Sprintf("%v", err), 400)
 				return
 			}
 
-			changes.ID = p.ID
-			p, err := app.UpdatePost(*changes)
+			post.Title = req.Title
+			post.Content = req.Content
+
+			post, err := app.UpdatePost(post)
 			if err != nil {
 				log.Printf("error: EditPostHandler: %v", err)
 				http.Error(w, fmt.Sprintf("%v", err), 400)
 				return
 			}
 
-			b, err := json.Marshal(p)
+			b, err := json.Marshal(post)
 			if err != nil {
 				log.Printf("error: EditPostHandler: %v", err)
 				http.Error(w, fmt.Sprintf("%v", err), 500)
 				return
 			}
 
-			w.Header().Set("Location", "/posts/"+p.ID)
-			w.WriteHeader(http.StatusSeeOther)
+			w.Header().Set("Location", "/posts/"+post.ID)
+			w.WriteHeader(http.StatusCreated)
 			w.Write(b)
 			return
 		}
@@ -138,7 +145,7 @@ func (app *App) EditPostHandler() http.HandlerFunc {
 		locals := struct {
 			Post *Post
 		}{
-			Post: p,
+			Post: post,
 		}
 		if err := app.templates.ExecuteTemplate(w, "create_post.html", locals); err != nil {
 			log.Printf("error: template: %v", err)
@@ -148,7 +155,14 @@ func (app *App) EditPostHandler() http.HandlerFunc {
 
 func (app *App) CreatePostHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		log.Println("foo1")
+		// GET
+		if r.Method == http.MethodGet {
+			if err := app.templates.ExecuteTemplate(w, "create_post.html", nil); err != nil {
+				log.Printf("error: template: %v", err)
+			}
+			return
+		}
+
 		// POST
 		if r.Method == http.MethodPost {
 			body, err := io.ReadAll(r.Body)
@@ -184,12 +198,6 @@ func (app *App) CreatePostHandler() http.HandlerFunc {
 			w.WriteHeader(http.StatusCreated)
 			w.Write(b)
 			return
-		}
-
-		// GET
-		log.Println("foo")
-		if err := app.templates.ExecuteTemplate(w, "create_post.html", nil); err != nil {
-			log.Printf("error: template: %v", err)
 		}
 	}
 }
@@ -379,20 +387,13 @@ func (app *App) CreatePost(p Post) (*Post, error) {
 	return &p, nil
 }
 
-type UpdatePostRequest struct {
-	Title   string
-	Content string
-}
-
 // Updates a posts title and content. All other fields are ignored.
-func (app *App) UpdatePost(patch Post) (*Post, error) {
-	p, err := app.GetPost(patch.ID)
-	if err != nil {
+func (app *App) UpdatePost(p *Post) (*Post, error) {
+	// Make sure it exists
+	if _, err := app.GetPost(p.ID); err != nil {
 		return nil, fmt.Errorf("UpdatePost: %w", err)
 	}
 
-	p.Title = patch.Title
-	p.Content = patch.Content
 	p.ModifiedTime = time.Now()
 
 	b, err := json.Marshal(p)

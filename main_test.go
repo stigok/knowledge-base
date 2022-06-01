@@ -129,7 +129,7 @@ func TestUpdatePost(t *testing.T) {
 
 	p.Title = "foo"
 	p.Content = "bar"
-	p, err = app.UpdatePost(*p)
+	p, err = app.UpdatePost(p)
 	is.NoErr(err)
 	is.Equal(p.Title, "foo")
 	is.Equal(p.Content, "bar")

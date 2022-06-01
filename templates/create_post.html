@@ -22,7 +22,7 @@
     </div>-->
       </header>
       <div class="d-flex post-content">
-        <textarea class="post-editor" name="content" @input="update">{{ .Post.Content }}</textarea>
+        <textarea class="post-editor" name="content" v-model="content" @input="update"></textarea>
         <div v-html="contentCompiled">
         </div>
       </div>
@@ -52,13 +52,17 @@
     },
     data: function() {
       return {
-        title: "",
-        content: "",
+        title: "{{ .Post.Title }}",
+        content: "{{ .Post.Content }}",
         contentCompiled: "",
         tags: [],
       }
     },
+    mounted() {
+      this.update()
+    },
     methods: {
+      // TODO: use server side rendering
       compileMarkdown: function() {
         return marked.parse(this.content, {
           sanitizer: (s) => DOMPurify.sanitize(s, {
@@ -68,16 +72,8 @@
           })
         })
       },
-      update: _.debounce(function(e) {
-        switch (e.target.name) {
-          case "title":
-            this.title = e.target.value
-            break
-          case "content":
-            this.content = e.target.value
-            this.contentCompiled = this.compileMarkdown()
-            break;
-        }
+      update: _.debounce(function() {
+        this.contentCompiled = this.compileMarkdown()
       }, 300),
       addTag: function(e) {
         const tag = e.target.value
@@ -98,7 +94,10 @@
             headers: {
               "Content-Type": "application/json",
             },
-            body: JSON.stringify(this.$data)
+            body: JSON.stringify({
+              Title: this.title,
+              Content: this.content,
+            })
           })
           .then((res) => res.json())
           .then((post) => {
