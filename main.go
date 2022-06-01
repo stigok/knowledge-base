@@ -147,7 +147,7 @@ func (app *App) EditPostHandler() http.HandlerFunc {
 		}{
 			Post: post,
 		}
-		if err := app.templates.ExecuteTemplate(w, "create_post.html", locals); err != nil {
+		if err := app.templates.ExecuteTemplate(w, "post_form.html", locals); err != nil {
 			log.Printf("error: template: %v", err)
 		}
 	}
@@ -157,7 +157,7 @@ func (app *App) CreatePostHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// GET
 		if r.Method == http.MethodGet {
-			if err := app.templates.ExecuteTemplate(w, "create_post.html", nil); err != nil {
+			if err := app.templates.ExecuteTemplate(w, "post_form.html", nil); err != nil {
 				log.Printf("error: template: %v", err)
 			}
 			return
