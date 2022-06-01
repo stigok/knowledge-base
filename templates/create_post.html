@@ -6,7 +6,7 @@
       <header class="d-flex">
         <span>Title</span>
         <div class="flex-item">
-          <input type="text" name="title" @input="update" value="{{ .Post.Title }}">
+          <input type="text" name="title" v-model="title" @keyup.enter="save">
         </div>
         <!--<div class="flex-item d-flex align-items-center me-2">
       <span class="badge bg-secondary me-1" v-for="tag in tags">
