@@ -67,7 +67,7 @@ func TestListPosts(t *testing.T) {
 		is.NoErr(err)
 	}
 
-	posts, err := app.ListPosts()
+	posts, err := app.ListPosts(nil)
 	is.NoErr(err)
 	is.True(posts != nil)
 	is.Equal(len(posts), 10)
