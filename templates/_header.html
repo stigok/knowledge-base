@@ -52,8 +52,8 @@
             <span class="navbar-toggler-icon"></span>
           </button>
           <div class="flex-grow-1">
-            <form class="d-flex">
-              <input class="form-control form-control-sm me-2" id="search" name="searchTerm" type="search" placeholder="Search" aria-label="Search" @input="search">
+            <form action="" method="GET" class="d-flex">
+              <input class="form-control form-control-sm me-2" id="search" name="q" type="search" placeholder="Search" aria-label="Search" value="{{ .SearchTerm }}">
               <button type="submit" class="btn btn-sm btn-outline-primary me-2">Search</button>
             </form>
           </div>

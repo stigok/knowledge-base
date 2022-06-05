@@ -70,7 +70,9 @@ func NewApp(postsRoot, staticRoot, listenAddr string) *App {
 
 func (app *App) IndexHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		posts, err := app.ListPosts()
+		q := r.FormValue("q")
+
+		posts, err := app.ListPosts(&ListPostOptions{SearchTerm: q})
 		if err != nil {
 			http.Error(w, fmt.Sprintf("%v", err), 500)
 			return
@@ -364,8 +366,12 @@ func (app *App) GetPost(id string) (*Post, error) {
 	return post, nil
 }
 
+type ListPostOptions struct {
+	SearchTerm string
+}
+
 // Returns a list of all posts.
-func (app *App) ListPosts() ([]*Post, error) {
+func (app *App) ListPosts(opts *ListPostOptions) ([]*Post, error) {
 	fileSystem := os.DirFS(app.postsRoot)
 
 	var posts []*Post
@@ -385,7 +391,14 @@ func (app *App) ListPosts() ([]*Post, error) {
 			return err
 		}
 
-		posts = append(posts, p)
+		if opts.SearchTerm != "" {
+			if strings.Contains(p.Title, opts.SearchTerm) || strings.Contains(p.Content, opts.SearchTerm) {
+				posts = append(posts, p)
+
+			}
+		} else {
+			posts = append(posts, p)
+		}
 
 		return nil
 	})
@@ -445,7 +458,7 @@ func (app *App) UpdatePost(p *Post) (*Post, error) {
 
 // Returns a list of all distinct tags of all posts.
 func (app *App) ListTags() ([]string, error) {
-	posts, err := app.ListPosts()
+	posts, err := app.ListPosts(nil)
 	if err != nil {
 		return nil, fmt.Errorf("ListTags: %w", err)
 	}
