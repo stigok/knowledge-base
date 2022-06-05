@@ -13,6 +13,24 @@ import (
 	"github.com/segmentio/ksuid"
 )
 
+type PostsService interface {
+	GetPost(id string) (*Post, error)
+	ListPosts(opts *ListPostOptions) ([]*Post, error)
+	UpdatePost(post *Post) error
+	CreatePost(post *Post) error
+}
+
+type postsService struct {
+	// Path to directory where posts are stored
+	root string
+}
+
+func NewPostsService(root string) PostsService {
+	return &postsService{
+		root: root,
+	}
+}
+
 type Post struct {
 	ID           string
 	Title        string
@@ -23,8 +41,8 @@ type Post struct {
 }
 
 // Returns a single post by ID.
-func (app *App) GetPost(id string) (*Post, error) {
-	filepath := path.Join(app.postsRoot, id)
+func (svc postsService) GetPost(id string) (*Post, error) {
+	filepath := path.Join(svc.root, id)
 	b, err := os.ReadFile(filepath)
 	if err != nil {
 		return nil, fmt.Errorf("GetPost: %w", err)
@@ -43,8 +61,8 @@ type ListPostOptions struct {
 }
 
 // Returns a list of all posts.
-func (app *App) ListPosts(opts *ListPostOptions) ([]*Post, error) {
-	fileSystem := os.DirFS(app.postsRoot)
+func (svc postsService) ListPosts(opts *ListPostOptions) ([]*Post, error) {
+	fileSystem := os.DirFS(svc.root)
 
 	var posts []*Post
 
@@ -58,7 +76,7 @@ func (app *App) ListPosts(opts *ListPostOptions) ([]*Post, error) {
 		}
 
 		id := strings.TrimSuffix(strings.TrimPrefix(path, "./"), ".json")
-		p, err := app.GetPost(id)
+		p, err := svc.GetPost(id)
 		if err != nil {
 			return err
 		}
@@ -82,11 +100,11 @@ func (app *App) ListPosts(opts *ListPostOptions) ([]*Post, error) {
 }
 
 // Create a post. ID, CreatedTime and ModifiedTime will be overwritten if present.
-func (app *App) CreatePost(p Post) (*Post, error) {
+func (svc postsService) CreatePost(p *Post) error {
 	now := time.Now()
 	id, err := ksuid.NewRandomWithTime(now)
 	if err != nil {
-		return nil, fmt.Errorf("CreatePost: %w", err)
+		return fmt.Errorf("CreatePost: %w", err)
 	}
 
 	p.ID = id.String()
@@ -95,42 +113,42 @@ func (app *App) CreatePost(p Post) (*Post, error) {
 
 	b, err := json.Marshal(p)
 	if err != nil {
-		return nil, fmt.Errorf("CreatePost: %w", err)
+		return fmt.Errorf("CreatePost: %w", err)
 	}
 
-	filepath := path.Join(app.postsRoot, id.String())
+	filepath := path.Join(svc.root, id.String())
 	if err := os.WriteFile(filepath, b, DefaultFileMode); err != nil {
-		return nil, fmt.Errorf("CreatePost: %w", err)
+		return fmt.Errorf("CreatePost: %w", err)
 	}
 
-	return &p, nil
+	return nil
 }
 
 // Updates a posts title and content. All other fields are ignored.
-func (app *App) UpdatePost(p *Post) (*Post, error) {
+func (svc postsService) UpdatePost(p *Post) error {
 	// Make sure it exists
-	if _, err := app.GetPost(p.ID); err != nil {
-		return nil, fmt.Errorf("UpdatePost: %w", err)
+	if _, err := svc.GetPost(p.ID); err != nil {
+		return fmt.Errorf("UpdatePost: %w", err)
 	}
 
 	p.ModifiedTime = time.Now()
 
 	b, err := json.Marshal(p)
 	if err != nil {
-		return nil, fmt.Errorf("UpdatePost: %w", err)
+		return fmt.Errorf("UpdatePost: %w", err)
 	}
 
-	filepath := path.Join(app.postsRoot, p.ID)
+	filepath := path.Join(svc.root, p.ID)
 	if err := os.WriteFile(filepath, b, DefaultFileMode); err != nil {
-		return nil, fmt.Errorf("UpdatePost: %w", err)
+		return fmt.Errorf("UpdatePost: %w", err)
 	}
 
-	return p, nil
+	return nil
 }
 
 // Returns a list of all distinct tags of all posts.
-func (app *App) ListTags() ([]string, error) {
-	posts, err := app.ListPosts(nil)
+func (svc postsService) ListTags() ([]string, error) {
+	posts, err := svc.ListPosts(nil)
 	if err != nil {
 		return nil, fmt.Errorf("ListTags: %w", err)
 	}

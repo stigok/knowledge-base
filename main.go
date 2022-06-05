@@ -29,19 +29,19 @@ const DefaultFileMode os.FileMode = 0640
 
 type App struct {
 	staticRoot string
-	postsRoot  string
 	listenAddr string
 
 	router    *Router
 	templates *template.Template
+	posts     PostsService
 }
 
 func NewApp(postsRoot, staticRoot, listenAddr string) *App {
 	app := &App{
 		listenAddr: listenAddr,
-		postsRoot:  postsRoot,
 		staticRoot: staticRoot,
 		router:     &Router{},
+		posts:      NewPostsService(postsRoot),
 	}
 
 	// Templates
@@ -67,7 +67,7 @@ func (app *App) IndexHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		q := r.FormValue("q")
 
-		posts, err := app.ListPosts(&ListPostOptions{SearchTerm: q})
+		posts, err := app.posts.ListPosts(&ListPostOptions{SearchTerm: q})
 		if err != nil {
 			http.Error(w, fmt.Sprintf("%v", err), 500)
 			return
@@ -92,7 +92,7 @@ type UpdatePostRequest struct {
 func (app *App) EditPostHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		postID := r.Context().Value("id").(string)
-		post, err := app.GetPost(postID)
+		post, err := app.posts.GetPost(postID)
 		if err != nil {
 			log.Printf("error: EditPostHandler: %v", err)
 			http.Error(w, fmt.Sprintf("%v", err), 404)
@@ -119,8 +119,7 @@ func (app *App) EditPostHandler() http.HandlerFunc {
 			post.Title = req.Title
 			post.Content = req.Content
 
-			post, err := app.UpdatePost(post)
-			if err != nil {
+			if err := app.posts.UpdatePost(post); err != nil {
 				log.Printf("error: EditPostHandler: %v", err)
 				http.Error(w, fmt.Sprintf("%v", err), 400)
 				return
@@ -178,8 +177,7 @@ func (app *App) CreatePostHandler() http.HandlerFunc {
 				return
 			}
 
-			p, err = app.CreatePost(*p)
-			if err != nil {
+			if err = app.posts.CreatePost(p); err != nil {
 				log.Printf("error: CreatePostHandler: %v", err)
 				http.Error(w, fmt.Sprintf("%v", err), 400)
 				return
@@ -209,7 +207,7 @@ func (app *App) GetPostHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		postID := r.Context().Value("id").(string)
 
-		post, err := app.GetPost(postID)
+		post, err := app.posts.GetPost(postID)
 		if err != nil {
 			log.Printf("error: GetPostHandler: %v", err)
 			http.Error(w, fmt.Sprintf("%v", err), 400)
