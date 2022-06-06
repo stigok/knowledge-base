@@ -2,6 +2,8 @@ github.com/aymerick/douceur v0.2.0 h1:Mv+mAeH1Q+n9Fr+oyamOlAkUNPWPlA8PPGR0QAaYuP
 github.com/aymerick/douceur v0.2.0/go.mod h1:wlT5vV2O3h55X9m7iVYN0TBM0NH/MmbLnd30/FjWUq4=
 github.com/gomarkdown/markdown v0.0.0-20220419181919-412bcf14cd2e h1:eF2U4VaZBPyxJZQxz8b0ulG3Dw2yQ2kGRJ9Io/cGQeE=
 github.com/gomarkdown/markdown v0.0.0-20220419181919-412bcf14cd2e/go.mod h1:JDGcbDT52eL4fju3sZ4TeHGsQwhG9nbDV21aMyhwPoA=
+github.com/gomarkdown/markdown v0.0.0-20220603122033-8f3b341fef32 h1:QxcGJpbMJw6tHRtrHKJiL11LdX1SXDfV1f4t4mJl3QI=
+github.com/gomarkdown/markdown v0.0.0-20220603122033-8f3b341fef32/go.mod h1:JDGcbDT52eL4fju3sZ4TeHGsQwhG9nbDV21aMyhwPoA=
 github.com/gorilla/css v1.0.0 h1:BQqNyPTi50JCFMTw/b67hByjMVXZRwGha6wxVGkeihY=
 github.com/gorilla/css v1.0.0/go.mod h1:Dn721qIggHpt4+EFCcTLTU/vk5ySda2ReITrtgBl60c=
 github.com/matryer/is v1.4.0 h1:sosSmIWwkYITGrxZ25ULNDeKiMNzFSr4V/eqBQP0PeE=
