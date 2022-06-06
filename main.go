@@ -10,6 +10,7 @@ import (
 	"mime"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -19,21 +20,37 @@ import (
 )
 
 var (
-	postsRoot  string
+	dataDir    string
 	listenAddr string
 )
 
 func init() {
+	defaultDataDir := os.Getenv("XDG_DATA_HOME")
+	if defaultDataDir == "" {
+		defaultDataDir = path.Join("$HOME", ".local", "share")
+	}
+	defaultDataDir = path.Join(defaultDataDir, "knowledge-base")
+
 	flag.StringVar(&listenAddr, "listen-addr", ":8080", "HTTP listen address")
-	flag.StringVar(&postsRoot, "root", "/tmp/knowledge-base", "filepath to store app data")
+	flag.StringVar(&dataDir, "root", defaultDataDir, "filepath to store app data")
 }
 
 func main() {
-	app := NewApp(postsRoot, "static/", listenAddr)
+	flag.Parse()
+
+	mustCreateDataDir(dataDir)
+	app := NewApp(dataDir, "static/", listenAddr)
 
 	// TODO: configure server params
 	log.Println("Starting HTTP server on", app.listenAddr)
 	panic(http.ListenAndServe(app.listenAddr, app))
+}
+
+func mustCreateDataDir(dir string) {
+	dir = os.ExpandEnv(dir)
+	if err := os.MkdirAll(dir, 0750); err != nil {
+		log.Panic("failed to create datadir: %v", err)
+	}
 }
 
 const DefaultFileMode os.FileMode = 0640
