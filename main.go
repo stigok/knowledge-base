@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"html/template"
 	"io"
@@ -17,8 +18,18 @@ import (
 	"github.com/microcosm-cc/bluemonday"
 )
 
+var (
+	postsRoot  string
+	listenAddr string
+)
+
+func init() {
+	flag.StringVar(&listenAddr, "listen-addr", ":8080", "HTTP listen address")
+	flag.StringVar(&postsRoot, "root", "/tmp/knowledge-base", "filepath to store app data")
+}
+
 func main() {
-	app := NewApp("/tmp/knowledge-base", "static/", ":8080")
+	app := NewApp(postsRoot, "static/", listenAddr)
 
 	// TODO: configure server params
 	log.Println("Starting HTTP server on", app.listenAddr)
