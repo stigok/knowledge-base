@@ -30,6 +30,7 @@ func init() {
 		defaultDataDir = path.Join("$HOME", ".local", "share")
 	}
 	defaultDataDir = path.Join(defaultDataDir, "knowledge-base")
+	defaultDataDir = os.ExpandEnv(defaultDataDir)
 
 	flag.StringVar(&listenAddr, "listen-addr", ":8080", "HTTP listen address")
 	flag.StringVar(&dataDir, "root", defaultDataDir, "filepath to store app data")
@@ -47,7 +48,6 @@ func main() {
 }
 
 func mustCreateDataDir(dir string) {
-	dir = os.ExpandEnv(dir)
 	if err := os.MkdirAll(dir, 0750); err != nil {
 		log.Panicf("failed to create datadir at '%s': %v", dir, err)
 	}
