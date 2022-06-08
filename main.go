@@ -49,7 +49,7 @@ func main() {
 func mustCreateDataDir(dir string) {
 	dir = os.ExpandEnv(dir)
 	if err := os.MkdirAll(dir, 0750); err != nil {
-		log.Panic("failed to create datadir: %v", err)
+		log.Panicf("failed to create datadir at '%s': %v", dir, err)
 	}
 }
 
