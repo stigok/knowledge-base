@@ -52,8 +52,13 @@
             <span class="navbar-toggler-icon"></span>
           </button>
           <div class="flex-grow-1">
-            <form action="" method="GET" class="d-flex">
-              <input class="form-control form-control-sm me-2" id="search" name="q" type="search" placeholder="Search" aria-label="Search" value="{{ .SearchTerm }}">
+            <form action="" method="GET" class="d-flex" id="searchApp">
+              <!-- Dynamically update search suggestions using native autocomplete -->
+              <datalist id="searchSuggestions">
+                <option v-for="s in suggestions" :value="s">
+              </datalist>
+
+              <input class="form-control form-control-sm me-2" id="search" name="q" type="search" placeholder="Search" aria-label="Search" value="{{ .SearchTerm }}" list="searchSuggestions" @input="update">
               <button type="submit" class="btn btn-sm btn-outline-primary me-2">Search</button>
             </form>
           </div>
@@ -71,3 +76,48 @@
           </div>
         </div>
       </nav>
+      <script>
+        /* global Vue */
+        /* global _ */
+        'use strict'
+
+        Vue.createApp({
+          delimiters: ['$(', ')'],
+          data: function() {
+            return {
+              suggestions: [],
+            }
+          },
+          mounted() {
+            //this.update()
+          },
+          methods: {
+            updateSuggestions: function() {
+              fetch("/api/search", {
+                  method: "GET",
+                  headers: {},
+                })
+                .then((res) => {
+                  if (res.status !== 200) {
+                    return Promise.reject({
+                      msg: "failed to get search suggestions",
+                      res
+                    })
+                  }
+                  return res.json()
+                })
+                .then((posts) => {
+                  const suggestions = posts.map(p => p.Title)
+                  this.suggestions.splice(0, this.suggestions.length, ...suggestions)
+                })
+                .catch((err) => {
+                  console.error(err)
+                })
+            },
+            update: _.debounce(function() {
+              this.updateSuggestions()
+            }, 300),
+          }
+        }).mount('#searchApp')
+
+      </script>

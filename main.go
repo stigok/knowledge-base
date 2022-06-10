@@ -88,6 +88,8 @@ func NewApp(postsRoot, staticRoot, listenAddr string) *App {
 	app.router.Post(`^/posts/(?P<id>\w+)/edit$`, app.EditPostHandler())
 	app.router.Post(`^/render-markdown$`, app.RenderMarkdownHandler())
 
+	app.router.Get(`^/api/search$`, app.SearchHandler())
+
 	return app
 }
 
@@ -354,6 +356,31 @@ func (app *App) RenderMarkdownHandler() http.HandlerFunc {
 		s = bm.Sanitize(s)
 		w.Header().Set("Content-Type", "text/html")
 		fmt.Fprintf(w, "%s", s)
+	}
+}
+
+func (app *App) SearchHandler() http.HandlerFunc {
+	//renderer := html.NewRenderer(
+	//	html.RendererOptions{Flags: html.CommonFlags | html.HrefTargetBlank},
+	//)
+	// Strip all HTML after markdown, to get clear text
+	//bm := bluemonday.NewPolicy()
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		q := r.FormValue("q")
+
+		posts, err := app.posts.ListPosts(&ListPostOptions{SearchTerm: q})
+		if err != nil {
+			http.Error(w, fmt.Sprintf("%v", err), 500)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(posts); err != nil {
+			log.Printf("error: SearchHandler: %v", err)
+			http.Error(w, fmt.Sprintf("%v", err), 400)
+			return
+		}
 	}
 }
 

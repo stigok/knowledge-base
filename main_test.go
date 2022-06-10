@@ -240,3 +240,65 @@ func TestHTTP(t *testing.T) {
 		})
 	}
 }
+
+func TestSearchAPI(t *testing.T) {
+	is := is.New(t)
+
+	// Setup test app
+	dir, err := os.MkdirTemp("", "")
+	is.NoErr(err)
+	defer os.RemoveAll(dir)
+
+	app := NewApp(dir, "/tmp/staticfiles", ":1337")
+
+	// Seed app with posts
+	var posts []*Post
+	for i := 0; i < 10; i++ {
+		p := &Post{
+			Title:   fmt.Sprintf("title%d", i),
+			Content: fmt.Sprintf("content%d", i),
+			Tags:    []string{fmt.Sprintf("tag%d", i)},
+		}
+		err := app.posts.CreatePost(p)
+		is.NoErr(err)
+		posts = append(posts, p)
+	}
+
+	testCases := []struct {
+		Method        string
+		URL           string
+		RequestBody   []byte
+		StatusCode    int
+		BodyValidator func(*testing.T, []byte)
+	}{
+		{
+			http.MethodGet, "/api/search?q=content7", nil,
+			200, func(t *testing.T, body []byte) {
+				t.Helper()
+				var resp []*Post
+				err := json.NewDecoder(bytes.NewReader(body)).Decode(&resp)
+				is.NoErr(err)
+				is.Equal(len(resp), 1)
+				is.Equal(resp[0].Title, "title7")
+			},
+		},
+	}
+
+	for i, tc := range testCases {
+		t.Run(fmt.Sprintf("%d %s %s", i, tc.Method, tc.URL), func(t *testing.T) {
+			is := is.New(t)
+
+			r := httptest.NewRequest(tc.Method, tc.URL, bytes.NewReader(tc.RequestBody))
+			w := httptest.NewRecorder()
+			app.ServeHTTP(w, r)
+
+			resp := w.Result()
+			body, err := io.ReadAll(resp.Body)
+			is.NoErr(err)
+
+			is.Equal(resp.StatusCode, tc.StatusCode)
+			tc.BodyValidator(t, body)
+			t.Log("Body:", string(body))
+		})
+	}
+}
