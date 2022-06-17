@@ -4,6 +4,14 @@
   <div class="flex-grow-1">
     <h1 class="h4">Title: {{ .Post.Title }}</h1>
     <h2 class="h5 small">Created: {{ .Post.CreatedTime }}, modified: {{ .Post.ModifiedTime }} </h2>
+    Tags:
+    <ul class="list">
+      {{ range .Tags }}
+      <li class="badge">{{ . }}</li>
+      {{ else }}
+      <li>(none)</li>
+      {{ end }}
+    </ul>
   </div>
   <div>
     <a href="/posts/{{ .Post.ID }}/edit" class="btn btn-small btn-outline-dark" role="button">Edit</a>

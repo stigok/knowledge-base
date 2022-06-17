@@ -88,7 +88,7 @@ func TestCreatePost(t *testing.T) {
 	p := &Post{
 		Title:   "title",
 		Content: "content",
-		Tags: []string{
+		Tags: []Tag{
 			"foo",
 			"bar",
 		},
@@ -102,8 +102,8 @@ func TestCreatePost(t *testing.T) {
 	is.True(p.ModifiedTime != time.Time{})
 
 	is.Equal(len(p.Tags), 2)
-	is.Equal(p.Tags[0], "foo")
-	is.Equal(p.Tags[1], "bar")
+	is.Equal(p.Tags[0], Tag("foo"))
+	is.Equal(p.Tags[1], Tag("bar"))
 }
 
 func TestUpdatePost(t *testing.T) {
@@ -118,16 +118,21 @@ func TestUpdatePost(t *testing.T) {
 	p := &Post{
 		Title:   "title",
 		Content: "content",
+		Tags:    []Tag{"foo"},
 	}
 	err = app.CreatePost(p)
 	is.NoErr(err)
 
 	p.Title = "foo"
 	p.Content = "bar"
+	p.Tags = []Tag{"bar", "foo"}
 	err = app.UpdatePost(p)
 	is.NoErr(err)
+
 	is.Equal(p.Title, "foo")
 	is.Equal(p.Content, "bar")
+	is.Equal(p.Tags[0], Tag("bar"))
+	is.Equal(p.Tags[1], Tag("foo"))
 }
 
 //func TestListTags(t *testing.T) {
@@ -174,7 +179,7 @@ func TestHTTP(t *testing.T) {
 		p := &Post{
 			Title:   fmt.Sprintf("title%d", i),
 			Content: fmt.Sprintf("content%d", i),
-			Tags:    []string{fmt.Sprintf("tag%d", i)},
+			Tags:    []Tag{Tag(fmt.Sprintf("tag%d", i))},
 		}
 		err := app.posts.CreatePost(p)
 		is.NoErr(err)
@@ -257,7 +262,7 @@ func TestSearchAPI(t *testing.T) {
 		p := &Post{
 			Title:   fmt.Sprintf("title%d", i),
 			Content: fmt.Sprintf("content%d", i),
-			Tags:    []string{fmt.Sprintf("tag%d", i)},
+			Tags:    []Tag{Tag(fmt.Sprintf("tag%d", i))},
 		}
 		err := app.posts.CreatePost(p)
 		is.NoErr(err)

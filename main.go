@@ -117,6 +117,7 @@ func (app *App) IndexHandler() http.HandlerFunc {
 type UpdatePostRequest struct {
 	Title   string
 	Content string
+	Tags    []Tag
 }
 
 func (app *App) EditPostHandler() http.HandlerFunc {
@@ -148,6 +149,7 @@ func (app *App) EditPostHandler() http.HandlerFunc {
 
 			post.Title = req.Title
 			post.Content = req.Content
+			post.Tags = req.Tags
 
 			if err := app.posts.UpdatePost(post); err != nil {
 				log.Printf("error: EditPostHandler: %v", err)

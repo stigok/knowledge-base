@@ -18,6 +18,7 @@ type PostsService interface {
 	ListPosts(opts *ListPostOptions) ([]*Post, error)
 	UpdatePost(post *Post) error
 	CreatePost(post *Post) error
+	ListTags() ([]Tag, error)
 }
 
 type postsService struct {
@@ -31,11 +32,13 @@ func NewPostsService(root string) PostsService {
 	}
 }
 
+type Tag string
+
 type Post struct {
 	ID           string
 	Title        string
 	Content      string
-	Tags         []string
+	Tags         []Tag
 	CreatedTime  time.Time
 	ModifiedTime time.Time
 }
@@ -147,24 +150,26 @@ func (svc postsService) UpdatePost(p *Post) error {
 }
 
 // Returns a list of all distinct tags of all posts.
-func (svc postsService) ListTags() ([]string, error) {
+func (svc postsService) ListTags() ([]Tag, error) {
 	posts, err := svc.ListPosts(nil)
 	if err != nil {
 		return nil, fmt.Errorf("ListTags: %w", err)
 	}
 
-	uniqueTags := make(map[string]bool)
+	uniqueTags := make(map[Tag]bool)
 	for _, p := range posts {
 		for _, tag := range p.Tags {
 			uniqueTags[tag] = true
 		}
 	}
 
-	var tags []string
+	var tags []Tag
 	for tag, _ := range uniqueTags {
 		tags = append(tags, tag)
 	}
-	sort.Strings(tags)
+	sort.Slice(tags, func(i, j int) bool {
+		return tags[i] < tags[j]
+	})
 
 	return tags, nil
 }
