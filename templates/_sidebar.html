@@ -1,0 +1,19 @@
+<!--
+<h2>Folders</h2>
+<ul>
+  <li>folder 1</li>
+  <li>nest 1
+    <ul>
+      <li>nested folder 1</li>
+    </ul>
+  </li>
+</ul>
+-->
+<h2>Tags</h2>
+<ul>
+  {{ range .AllTags }}
+  <li>{{ . }}</li>
+  {{ else }}
+  <li>(no tags)</li>
+  {{ end }}
+</ul>

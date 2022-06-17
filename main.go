@@ -103,10 +103,18 @@ func (app *App) IndexHandler() http.HandlerFunc {
 			return
 		}
 
+		tags, err := app.posts.ListTags()
+		if err != nil {
+			log.Printf("error: failed to get tags: %v", err)
+			tags = nil
+		}
+
 		locals := struct {
-			Posts []*Post
+			Posts   []*Post
+			AllTags []Tag
 		}{
-			Posts: posts,
+			Posts:   posts,
+			AllTags: tags,
 		}
 		if err := app.templates.ExecuteTemplate(w, "index.html", locals); err != nil {
 			log.Printf("error: template: %v", err)

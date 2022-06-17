@@ -1,15 +1,18 @@
 {{ template "_header.html" }}
 
-<div class="container-fluid mt-3">
-
-  {{ range .Posts }}
-  <div>
-    <a href="/posts/{{ .ID }}"><strong>{{ .Title }}</strong> <small>{{ .CreatedTime }}</small></a>
+<div class="container-fluid d-flex mt-3">
+  <aside id="sidebar" class="flex-item me-3">
+    {{ template "_sidebar.html" . }}
+  </aside>
+  <div class="flex-item flex-grow-1">
+    {{ range .Posts }}
+    <div>
+      <a href="/posts/{{ .ID }}"><strong>{{ .Title }}</strong> <small>{{ .CreatedTime }}</small></a>
+    </div>
+    {{ else }}
+    <p>No posts to show.</p>
+    {{ end }}
   </div>
-  {{ else }}
-  <p>No posts to show.</p>
-  {{ end }}
-
 </div>
 
 {{ template "_footer.html" }}
