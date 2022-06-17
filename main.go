@@ -93,6 +93,11 @@ func NewApp(postsRoot, staticRoot, listenAddr string) *App {
 	return app
 }
 
+// The main HTTP request router and handler.
+func (app *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	app.router.ServeHTTP(w, r)
+}
+
 func (app *App) IndexHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		q := r.FormValue("q")
@@ -392,9 +397,4 @@ func (app *App) SearchHandler() http.HandlerFunc {
 			return
 		}
 	}
-}
-
-// The main HTTP request router and handler.
-func (app *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	app.router.ServeHTTP(w, r)
 }
