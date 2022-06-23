@@ -26,6 +26,8 @@ var (
 
 	//go:embed templates/*.html
 	templateFS embed.FS
+	//go:embed static/*
+	staticFS embed.FS
 )
 
 func init() {
@@ -44,7 +46,7 @@ func main() {
 	flag.Parse()
 
 	mustCreateDataDir(dataDir)
-	app := NewApp(dataDir, "static/", listenAddr)
+	app := NewApp(dataDir, listenAddr)
 
 	// TODO: configure server params
 	log.Println("Starting HTTP server on", app.listenAddr)
@@ -60,7 +62,6 @@ func mustCreateDataDir(dir string) {
 const DefaultFileMode os.FileMode = 0640
 
 type App struct {
-	staticRoot string
 	listenAddr string
 
 	router    *Router
@@ -68,10 +69,9 @@ type App struct {
 	posts     PostsService
 }
 
-func NewApp(postsRoot, staticRoot, listenAddr string) *App {
+func NewApp(postsRoot, listenAddr string) *App {
 	app := &App{
 		listenAddr: listenAddr,
-		staticRoot: staticRoot,
 		router:     &Router{},
 		posts:      NewPostsService(postsRoot),
 	}
@@ -291,29 +291,18 @@ func (app *App) LogHandler(next http.Handler) http.Handler {
 }
 
 func (app *App) StaticHandler(next http.Handler) http.Handler {
-	cache := make(map[string][]byte)
-	fs := os.DirFS(app.staticRoot)
 	readFile := func(path string) ([]byte, error) {
-		if b, ok := cache[path]; ok {
-			return b, nil
-		}
-
-		f, err := fs.Open(path)
+		f, err := staticFS.Open(path)
 		if err != nil {
-			// Remember that this file can't be opened for any reason
-			cache[path] = nil
 			return nil, err
 		}
 		defer f.Close()
 
 		b, err := io.ReadAll(f)
 		if err != nil {
-			// Remember that this file can't be read for any reason
-			cache[path] = nil
 			return nil, err
 		}
 
-		cache[path] = b
 		return b, nil
 	}
 
@@ -323,7 +312,7 @@ func (app *App) StaticHandler(next http.Handler) http.Handler {
 			return
 		}
 
-		path := strings.TrimPrefix(r.URL.Path, "/static/")
+		path := strings.TrimPrefix(r.URL.Path, "/")
 		b, err := readFile(path)
 		if err != nil {
 			next.ServeHTTP(w, r)

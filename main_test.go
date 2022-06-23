@@ -171,7 +171,7 @@ func TestHTTP(t *testing.T) {
 	is.NoErr(err)
 	defer os.RemoveAll(dir)
 
-	app := NewApp(dir, "/tmp/staticfiles", ":1337")
+	app := NewApp(dir, ":1337")
 
 	// Seed app with posts
 	var posts []*Post
@@ -254,7 +254,7 @@ func TestSearchAPI(t *testing.T) {
 	is.NoErr(err)
 	defer os.RemoveAll(dir)
 
-	app := NewApp(dir, "/tmp/staticfiles", ":1337")
+	app := NewApp(dir, ":1337")
 
 	// Seed app with posts
 	var posts []*Post
