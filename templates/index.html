@@ -7,7 +7,7 @@
   <div class="flex-item flex-grow-1">
     {{ range .Posts }}
     <div>
-      <a href="/posts/{{ .ID }}"><strong>{{ .Title }}</strong> <small>{{ .CreatedTime }}</small></a>
+      <strong>{{ .CreatedTime.Format "2006-01-02" }}</strong> <a href="/posts/{{ .ID }}">{{ .Title }}</a>
     </div>
     {{ else }}
     <p>No posts to show.</p>
