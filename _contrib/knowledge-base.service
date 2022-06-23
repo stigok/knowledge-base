@@ -1,0 +1,29 @@
+[Unit]
+Description=Markdown notes and document manager
+
+[Service]
+ExecStart=/home/sshow/bin/knowledge-base -listen-addr=127.0.0.1:52273
+Restart=always
+RestartSec=1m
+Type=simple
+
+DevicePolicy=strict
+DeviceAllow=/dev/stdin r
+DeviceAllow=/dev/stdout w
+IPAddressDeny=any
+LockPersonality=true
+MemoryDenyWriteExecute=true
+NoNewPrivileges=true
+ProtectHome=false
+ReadOnlyPaths=%h
+ProtectSystem=strict
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_UNIX
+RestrictNamespaces=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+#Environment="DISPLAY=:0" "XAUTHORITY=%h/.Xauthority"
+
+[Install]
+WantedBy=default.target
