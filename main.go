@@ -307,12 +307,18 @@ func (app *App) StaticHandler(next http.Handler) http.Handler {
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !strings.HasPrefix(r.URL.Path, "/static/") {
+		isStatic := strings.HasPrefix(r.URL.Path, "/static/")
+		isFavicon := r.URL.Path == "/favicon.ico"
+
+		if !isStatic && !isFavicon {
 			next.ServeHTTP(w, r)
 			return
 		}
 
 		path := strings.TrimPrefix(r.URL.Path, "/")
+		if isFavicon {
+			path = "static/favicon.ico"
+		}
 		b, err := readFile(path)
 		if err != nil {
 			next.ServeHTTP(w, r)
