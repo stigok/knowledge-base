@@ -10,9 +10,9 @@
 </ul>
 -->
 <h2>Tags</h2>
-<ul>
+<ul class="list-unstyled">
   {{ range .AllTags }}
-  <li>{{ . }}</li>
+  <li class="badge bg-success">{{ . }}</li>
   {{ else }}
   <li>(no tags)</li>
   {{ end }}
