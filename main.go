@@ -1,6 +1,7 @@
 package main
 
 import (
+	"embed"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -22,6 +23,9 @@ import (
 var (
 	dataDir    string
 	listenAddr string
+
+	//go:embed templates/*.html
+	templateFS embed.FS
 )
 
 func init() {
@@ -74,7 +78,7 @@ func NewApp(postsRoot, staticRoot, listenAddr string) *App {
 
 	// Templates
 	app.templates = template.Must(
-		template.New("all").ParseGlob(filepath.Join("templates", "*.html")))
+		template.New("all").ParseFS(templateFS, "templates/*.html"))
 
 	// Routes
 	app.router.Use(app.LogHandler)
