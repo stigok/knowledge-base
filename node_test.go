@@ -3,7 +3,6 @@ package main
 import (
 	"testing"
 
-	"github.com/andreyvit/diff"
 	"github.com/matryer/is"
 )
 
@@ -114,59 +113,4 @@ func TestBuildTree(t *testing.T) {
 	foobar := foo.Children[0]
 	is.Equal(foobar.Label, "bar")
 	is.Equal(foobar.FullName(), "/foo/bar")
-}
-
-const expectedUnpackHTML = `<ul>
-  <li class="">
-    <ul>
-      <li class="">
-        <ul>
-          <li class="">foo
-            <ul>
-              <li class="">bar
-                <ul>
-                  <li class="">baz
-                    <ul>
-                      <li class="">e</li>
-                      <li class="">f</li>
-                    </ul>
-                  </li>
-                </ul>
-                <ul>
-                  <li class="">c</li>
-                  <li class="">d</li>
-                </ul>
-              </li>
-            </ul>
-            <ul>
-              <li class="">a</li>
-              <li class="">b</li>
-            </ul>
-          </li>
-        </ul>
-      </li>
-    </ul>
-  </li>
-</ul>
-`
-
-func TestUnpackHTML(t *testing.T) {
-	values := map[string][]*Post{
-		"foo": []*Post{
-			&Post{Title: "a"}, &Post{Title: "b"},
-		},
-		"foo/bar": []*Post{
-			&Post{Title: "c"}, &Post{Title: "d"},
-		},
-		"foo/bar/baz": []*Post{
-			&Post{Title: "e"}, &Post{Title: "f"},
-		},
-	}
-
-	tree := BuildTree(values)
-	tree.Label = ""
-
-	if s := tree.UnpackHTML(nil); s != expectedUnpackHTML {
-		t.Errorf("HTML not as expected:\n%s", diff.LineDiff(expectedUnpackHTML, s))
-	}
 }
