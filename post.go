@@ -18,7 +18,7 @@ type PostsService interface {
 	ListPosts(opts *ListPostOptions) ([]*Post, error)
 	UpdatePost(post *Post) error
 	CreatePost(post *Post) error
-	ListTags() ([]Tag, error)
+	ListTags(opts *ListTagOptions) ([]Tag, error)
 	GetPostsFolderTree() (*Node, error)
 }
 
@@ -150,8 +150,17 @@ func (svc postsService) UpdatePost(p *Post) error {
 	return nil
 }
 
+type ListTagOptions struct {
+	// Ignore tags with a functional meaning.
+	IgnoreFunctional bool
+}
+
 // Returns a list of all distinct tags of all posts.
-func (svc postsService) ListTags() ([]Tag, error) {
+func (svc postsService) ListTags(opts *ListTagOptions) ([]Tag, error) {
+	if opts == nil {
+		opts = new(ListTagOptions)
+	}
+
 	posts, err := svc.ListPosts(nil)
 	if err != nil {
 		return nil, fmt.Errorf("ListTags: %w", err)
@@ -160,6 +169,9 @@ func (svc postsService) ListTags() ([]Tag, error) {
 	uniqueTags := make(map[Tag]bool)
 	for _, p := range posts {
 		for _, tag := range p.Tags {
+			if opts.IgnoreFunctional && strings.HasPrefix(string(tag), "_") {
+				continue
+			}
 			uniqueTags[tag] = true
 		}
 	}

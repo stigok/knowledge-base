@@ -112,7 +112,7 @@ func (app *App) IndexHandler() http.HandlerFunc {
 			return
 		}
 
-		tags, err := app.posts.ListTags()
+		tags, err := app.posts.ListTags(&ListTagOptions{IgnoreFunctional: true})
 		if err != nil {
 			log.Printf("error: failed to get tags: %v", err)
 			tags = nil
