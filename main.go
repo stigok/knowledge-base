@@ -118,12 +118,19 @@ func (app *App) IndexHandler() http.HandlerFunc {
 			tags = nil
 		}
 
+		postsTree, err := app.posts.GetPostsFolderTree()
+		if err != nil {
+			log.Printf("error: failed to get posts folder tree: %v", err)
+		}
+
 		locals := struct {
-			Posts   []*Post
-			AllTags []Tag
+			Posts     []*Post
+			AllTags   []Tag
+			PostsTree *Node
 		}{
-			Posts:   posts,
-			AllTags: tags,
+			Posts:     posts,
+			AllTags:   tags,
+			PostsTree: postsTree,
 		}
 		if err := app.templates.ExecuteTemplate(w, "index.html", locals); err != nil {
 			log.Printf("error: template: %v", err)

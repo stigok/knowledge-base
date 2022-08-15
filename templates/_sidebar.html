@@ -1,14 +1,25 @@
-<!--
 <h2>Folders</h2>
+
+{{ define "posts_tree" }}
 <ul>
-  <li>folder 1</li>
-  <li>nest 1
+  <li>{{ .Label }} foo
+    {{ range .Children }}
+    {{ template "posts_tree" . }}
+    {{ end }}
+
+    {{ if not .Value }}
     <ul>
-      <li>nested folder 1</li>
+      {{ range .Value }}
+      <li>{{ .Title }}</li>
+      {{ end }}
     </ul>
+    {{ end }}
   </li>
 </ul>
--->
+{{ end }}
+
+{{ template "posts_tree" .PostsTree }}
+
 <h2>Tags</h2>
 <ul class="list-unstyled">
   {{ range .AllTags }}

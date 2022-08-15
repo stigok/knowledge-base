@@ -19,6 +19,7 @@ type PostsService interface {
 	UpdatePost(post *Post) error
 	CreatePost(post *Post) error
 	ListTags() ([]Tag, error)
+	GetPostsFolderTree() (*Node, error)
 }
 
 type postsService struct {
@@ -172,4 +173,23 @@ func (svc postsService) ListTags() ([]Tag, error) {
 	})
 
 	return tags, nil
+}
+
+func (svc postsService) GetPostsFolderTree() (*Node, error) {
+	posts, err := svc.ListPosts(nil)
+	if err != nil {
+		return nil, fmt.Errorf("GetPostsFolderTree: %w", err)
+	}
+
+	folders := make(map[string][]*Post)
+	for _, p := range posts {
+		for _, t := range p.Tags {
+			parts := strings.SplitN(string(t), ":", 2)
+			if len(parts) == 2 && parts[0] == "_dir" {
+				folders[parts[1]] = append(folders[parts[1]], p)
+			}
+		}
+	}
+
+	return BuildTree(folders), nil
 }
