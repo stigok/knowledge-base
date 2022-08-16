@@ -2,12 +2,11 @@
 
 <header class="d-flex p-3 bg-dark bg-opacity-25 mb-3">
   <div class="flex-grow-1">
-    <h1 class="h4">Title: {{ .Post.Title }}</h1>
-    <h2 class="h5 small">Created: {{ .Post.CreatedTime }}, modified: {{ .Post.ModifiedTime }} </h2>
-    Tags:
-    <ul class="list">
+    <h1 class="h4">{{ .Post.Title }}</h1>
+    <h2 class="h5 small">Created: {{ .Post.CreatedTime.Format "2006-01-02 15:04:05" }}<br>Last updated: {{ .Post.ModifiedTime.Format "2006-01-02 15:04:05" }} </h2>
+    <ul class="list-unstyled">
       {{ range .Tags }}
-      <li class="badge">{{ . }}</li>
+      <li class="badge bg-success">{{ . }}</li>
       {{ else }}
       <li>(none)</li>
       {{ end }}
