@@ -1,16 +1,16 @@
 <h2>Folders</h2>
 
 {{ define "posts_tree" }}
-<ul>
-  <li>{{ .Label }} foo
+<ul class="{{ if not .Label }}list-unstyled{{ end }}">
+  <li>{{ .Label }}
     {{ range .Children }}
     {{ template "posts_tree" . }}
     {{ end }}
 
-    {{ if not .Value }}
+    {{ if .Value }}
     <ul>
       {{ range .Value }}
-      <li>{{ .Title }}</li>
+      <li><a href="/posts/{{ .ID }}">{{ .Title }}</a></li>
       {{ end }}
     </ul>
     {{ end }}
