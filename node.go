@@ -19,23 +19,18 @@ type Node struct {
 func (tree *Node) NewOrExisting(k string) *Node {
 	parent := tree
 	parts := strings.Split(k, TagPathSeparator)
+
+outer:
 	for i := 0; i < len(parts); i++ {
 		if i == 0 && parent.Label == parts[0] {
 			continue
 		}
 
-		var match *Node
 		for _, child := range parent.Children {
 			if child.Label == parts[i] {
-				match = child
-				break
+				parent = child
+				continue outer
 			}
-		}
-
-		// TODO: this can probably be (re)moved
-		if match != nil {
-			parent = match
-			continue
 		}
 
 		child := new(Node)
