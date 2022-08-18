@@ -10,7 +10,6 @@ const TagPathSeparator = "/"
 type Node struct {
 	Label    string
 	Value    []*Post
-	Parent   *Node `json:"-"`
 	Children []*Node
 }
 
@@ -42,7 +41,6 @@ func (tree *Node) NewOrExisting(k string) *Node {
 		child := new(Node)
 		parent.Children = append(parent.Children, child)
 		child.Label = parts[i]
-		child.Parent = parent
 		parent = child
 	}
 

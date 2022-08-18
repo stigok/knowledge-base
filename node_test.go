@@ -8,8 +8,8 @@ import (
 
 func TestNewOrExisting(t *testing.T) {
 	n1 := &Node{Label: "n1"}
-	n2 := &Node{Label: "n2", Parent: n1}
-	n3 := &Node{Label: "n3", Parent: n2}
+	n2 := &Node{Label: "n2"}
+	n3 := &Node{Label: "n3"}
 	n1.Children = []*Node{n2}
 	n2.Children = []*Node{n3}
 
@@ -23,7 +23,6 @@ func TestNewOrExisting(t *testing.T) {
 		is := is.New(t)
 
 		n4 := n1.NewOrExisting("n1/n2/n4")
-		is.Equal(n4.Parent, n2)
 		is.Equal(n2.Children[1], n4)
 	})
 
@@ -31,7 +30,6 @@ func TestNewOrExisting(t *testing.T) {
 		is := is.New(t)
 
 		n5 := n3.NewOrExisting("n5")
-		is.Equal(n5.Parent, n3)
 		is.Equal(len(n3.Children), 1)
 		is.Equal(n3.Children[0], n5)
 	})
