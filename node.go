@@ -14,53 +14,6 @@ type Node struct {
 	Children []*Node
 }
 
-// Root returns the root node of the tree.
-func (tree *Node) Root() *Node {
-	for tree.Parent != nil {
-		tree = tree.Parent
-	}
-	return tree
-}
-
-// FullName returns the full path of the node, starting from the root.
-func (node *Node) FullName() string {
-	names := []string{}
-	cur := node
-	for {
-		names = append([]string{cur.Label}, names...)
-		if cur.Parent == nil {
-			break
-		}
-		cur = cur.Parent
-	}
-
-	return strings.Join(names, TagPathSeparator)
-}
-
-// Search finds a node in the tree at path `k` under the current node.
-func (node *Node) Search(k string) *Node {
-	var match *Node
-	keys := strings.Split(k, TagPathSeparator)
-
-outer:
-	for _, k := range keys {
-		for _, child := range node.Children {
-			if child.Label == k {
-				match = child
-			} else {
-				match = nil
-				break outer
-			}
-		}
-
-		if match != nil {
-			node = match
-		}
-	}
-
-	return match
-}
-
 // NewOrExisting returns an existing node at the specified path under
 // the current node, or creates it if it does not exist.
 // TODO: don't require path segment for the source node
@@ -80,6 +33,7 @@ func (tree *Node) NewOrExisting(k string) *Node {
 			}
 		}
 
+		// TODO: this can probably be (re)moved
 		if match != nil {
 			parent = match
 			continue
