@@ -13,36 +13,32 @@ type Node struct {
 	Children []*Node
 }
 
-// NewOrExisting returns an existing node at the specified path under
-// the current node, or creates it if it does not exist.
-// TODO: don't require path segment for the source node
-func (tree *Node) NewOrExisting(k string) *Node {
-	parent := tree
-	parts := strings.Split(k, TagPathSeparator)
-
-outer:
-	for i := 0; i < len(parts); i++ {
-		if i == 0 && parent.Label == parts[0] {
-			continue
-		}
-
-		for _, child := range parent.Children {
-			if child.Label == parts[i] {
-				parent = child
-				continue outer
-			}
-		}
-
-		child := new(Node)
-		parent.Children = append(parent.Children, child)
-		child.Label = parts[i]
-		parent = child
+// NewOrExisting returns an existing node, or creates a new, at the specified
+// path. An empty key will return the current node. Path segments must be
+// separated by `TagPathSeparator`. Leading and trailing separators are
+// ignored.
+func (node *Node) NewOrExisting(k string) *Node {
+	if k = strings.Trim(k, TagPathSeparator); k == "" {
+		return node
 	}
 
-	return parent
+	segs := strings.Split(k, TagPathSeparator)
+
+	current, segs := segs[0], segs[1:]
+	for _, child := range node.Children {
+		if child.Label == current {
+			return child.NewOrExisting(strings.Join(segs, TagPathSeparator))
+		}
+	}
+
+	child := &Node{
+		Label: current,
+	}
+	node.Children = append(node.Children, child)
+	return child.NewOrExisting(strings.Join(segs, TagPathSeparator))
 }
 
-// BuildTree builds a node tree with values from a map of `FullName`s.
+// BuildTree builds a node tree with values from a map.
 // The root of the tree has no label by default.
 func BuildTree(m map[string][]*Post) *Node {
 	// Keep dir sorted. Important for the directory structure.

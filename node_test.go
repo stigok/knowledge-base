@@ -7,31 +7,37 @@ import (
 )
 
 func TestNewOrExisting(t *testing.T) {
-	n1 := &Node{Label: "n1"}
-	n2 := &Node{Label: "n2"}
-	n3 := &Node{Label: "n3"}
-	n1.Children = []*Node{n2}
-	n2.Children = []*Node{n3}
+	t.Run("creates a new child node", func(t *testing.T) {
+		is := is.New(t)
+
+		a := &Node{Label: "a"}
+		c := a.NewOrExisting("b/c")
+
+		is.Equal(a.Children[0].Children[0], c)
+	})
 
 	t.Run("gets an existing node", func(t *testing.T) {
 		is := is.New(t)
 
-		is.Equal(n1.NewOrExisting("n1/n2/n3"), n3)
+		a := &Node{Label: "a"}
+		_ = a.NewOrExisting("b/c")
+		b := a.NewOrExisting("b")
+
+		is.Equal(a.Children[0], b)
 	})
 
-	t.Run("creates a new child node", func(t *testing.T) {
+	t.Run("returns itself on empty key", func(t *testing.T) {
 		is := is.New(t)
-
-		n4 := n1.NewOrExisting("n1/n2/n4")
-		is.Equal(n2.Children[1], n4)
+		a1 := &Node{Label: "a"}
+		a2 := a1.NewOrExisting("")
+		is.Equal(a1, a2)
 	})
 
-	t.Run("creates a new child node under a child", func(t *testing.T) {
+	t.Run("returns itself on a single TagPathSeparator", func(t *testing.T) {
 		is := is.New(t)
-
-		n5 := n3.NewOrExisting("n5")
-		is.Equal(len(n3.Children), 1)
-		is.Equal(n3.Children[0], n5)
+		a1 := &Node{Label: "a"}
+		a2 := a1.NewOrExisting(TagPathSeparator)
+		is.Equal(a1, a2)
 	})
 }
 
