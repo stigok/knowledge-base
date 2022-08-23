@@ -1,39 +1,38 @@
 {{ template "_header.html" }}
 
-<div class="container-fluid mt-3">
+<div class="container-fluid my-3">
   <div id="post" class="post">
-    <article>
-      <header class="d-flex">
-        <span>Title</span>
-        <div class="flex-item">
-          <input type="text" name="title" v-model="title" @keyup.enter="save">
-        </div>
+    <div class="form-group">
+      <label for="title" class="h5">Title</label>
+      <input class="form-control" type="text" id="title" name="title" v-model="title" @keyup.enter="save">
+    </div>
 
-        <!-- Tags -->
-        <div class="flex-item d-flex align-items-center me-2">
-          <span class="badge bg-secondary me-1" v-for="tag in tags">
-            $( tag )
-            <button type="button" @click="removeTag(tag)" class="btn btn-sm btn-link text-white px-1 text-decoration-none">✕</button>
-          </span>
-        </div>
-        <div class="flex-item d-flex align-items-center">
-          <input class="form-control" list="datalistTags" placeholder="tag name" @keyup.enter="addTag">
-          <datalist id="datalistTags">
-            <option v-for="tag in allTags" :value="tag">$( tag )</option>
-          </datalist>
-        </div>
+    <!-- Tags -->
+    <div>
+      <label for="tags" class="h5">Tags</label>
+      <input class="form-control" id="tags" list="datalistTags" placeholder="tag name" @keyup.enter="addTag">
+      <datalist id="datalistTags">
+        <option v-for="tag in allTags" :value="tag">$( tag )</option>
+      </datalist>
+    </div>
 
-      </header>
-      <div class="d-flex post-content">
-        <textarea class="post-editor" name="content" v-model="content" @input="update"></textarea>
-        <div v-html="contentCompiled">
-        </div>
+    <ul class="list-unstyled mt-2">
+      <li class="badge bg-success me-1" v-for="tag in tags">
+        $( tag )
+        <button type="button" @click="removeTag(tag)" class="btn btn-sm btn-link text-white p-0 text-decoration-none">✕</button>
+      </li>
+    </ul>
+
+
+    <div class="d-flex post-content">
+      <textarea class="w-50 p-3 me-0 border-1 min-height-50" name="content" v-model="content" @input="update"></textarea>
+      <div class="w-50 overflow-scroll bg-secondary bg-opacity-25 border-1 min-height-50 p-3" v-html="contentCompiled">
       </div>
-      <footer class="text-muted">
-        <p>Created at 2020-08-01 15:44, updated at 2020-08-01 15:44 UTC+1</p>
-        <button type="button" class="btn btn-success btn-sm" @click="save">Save</button>
-      </footer>
-    </article>
+    </div>
+    <footer class="text-muted">
+      <p>Created at 2020-08-01 15:44, updated at 2020-08-01 15:44 UTC+1</p>
+      <button type="button" class="btn btn-success btn-sm" @click="save">Save</button>
+    </footer>
   </div>
 </div>
 
