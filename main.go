@@ -88,8 +88,8 @@ func NewApp(postsRoot, listenAddr string) *App {
 	app.router.Get("^/posts/?$", app.CreatePostHandler())
 	app.router.Post("^/posts/?$", app.CreatePostHandler())
 	app.router.Get(`^/posts/(?P<id>\w+)$`, app.GetPostHandler())
-	app.router.Get(`^/posts/(?P<id>\w+)/edit$`, app.EditPostHandler())
-	app.router.Post(`^/posts/(?P<id>\w+)/edit$`, app.EditPostHandler())
+	app.router.Get(`^/posts/(?P<id>\w+)/edit$`, app.UpdatePostHandler())
+	app.router.Post(`^/posts/(?P<id>\w+)/edit$`, app.UpdatePostHandler())
 	app.router.Post(`^/render-markdown$`, app.RenderMarkdownHandler())
 
 	app.router.Get(`^/api/search$`, app.SearchHandler())
@@ -145,12 +145,12 @@ type UpdatePostRequest struct {
 	Tags    []Tag
 }
 
-func (app *App) EditPostHandler() http.HandlerFunc {
+func (app *App) UpdatePostHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		postID := r.Context().Value("id").(string)
 		post, err := app.posts.GetPost(postID)
 		if err != nil {
-			log.Printf("error: EditPostHandler: %v", err)
+			log.Printf("error: UpdatePostHandler: %v", err)
 			http.Error(w, fmt.Sprintf("%v", err), 404)
 			return
 		}
@@ -159,7 +159,7 @@ func (app *App) EditPostHandler() http.HandlerFunc {
 		if r.Method == http.MethodPost {
 			body, err := io.ReadAll(r.Body)
 			if err != nil {
-				log.Printf("error: EditPostHandler: %v", err)
+				log.Printf("error: UpdatePostHandler: %v", err)
 				http.Error(w, fmt.Sprintf("%v", err), 400)
 				return
 			}
@@ -167,7 +167,7 @@ func (app *App) EditPostHandler() http.HandlerFunc {
 			req := new(UpdatePostRequest)
 			err = json.Unmarshal(body, req)
 			if err != nil {
-				log.Printf("error: EditPostHandler: %v", err)
+				log.Printf("error: UpdatePostHandler: %v", err)
 				http.Error(w, fmt.Sprintf("%v", err), 400)
 				return
 			}
@@ -177,14 +177,14 @@ func (app *App) EditPostHandler() http.HandlerFunc {
 			post.Tags = req.Tags
 
 			if err := app.posts.UpdatePost(post); err != nil {
-				log.Printf("error: EditPostHandler: %v", err)
+				log.Printf("error: UpdatePostHandler: %v", err)
 				http.Error(w, fmt.Sprintf("%v", err), 400)
 				return
 			}
 
 			b, err := json.Marshal(post)
 			if err != nil {
-				log.Printf("error: EditPostHandler: %v", err)
+				log.Printf("error: UpdatePostHandler: %v", err)
 				http.Error(w, fmt.Sprintf("%v", err), 500)
 				return
 			}
