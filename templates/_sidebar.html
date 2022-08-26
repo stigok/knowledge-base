@@ -23,7 +23,7 @@
 <h2>Tags</h2>
 <ul class="list-unstyled">
   {{ range .AllTags }}
-  <li class="badge bg-success">{{ . }}</li>
+  <li class="badge bg-success"><a href="/?tags={{ . }}">{{ . }}</a></li>
   {{ else }}
   <li>(no tags)</li>
   {{ end }}

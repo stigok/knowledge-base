@@ -1,3 +1,9 @@
+/* Overrides */
+.badge.bg-success a {
+  color: #fff;
+  text-decoration: none;
+}
+
 /* Utils */
 .w-50 {
   width: 50%;

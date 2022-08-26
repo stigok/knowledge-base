@@ -104,13 +104,14 @@ func (app *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (app *App) IndexHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		q := r.FormValue("q")
+		searchQ := r.FormValue("q")
+		searchTags := r.FormValue("tags")
 
-		posts, err := app.posts.ListPosts(&ListPostOptions{SearchTerm: q})
-		if err != nil {
-			http.Error(w, fmt.Sprintf("%v", err), 500)
-			return
-		}
+		// Post content filter
+		posts, err := app.posts.ListPosts(&ListPostOptions{
+			SearchTerm: searchQ,
+			TagsFilter: strings.Split(searchTags, ","),
+		})
 
 		tags, err := app.posts.ListTags(&ListTagOptions{IgnoreFunctional: true})
 		if err != nil {

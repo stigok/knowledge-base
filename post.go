@@ -62,6 +62,7 @@ func (svc postsService) GetPost(id string) (*Post, error) {
 
 type ListPostOptions struct {
 	SearchTerm string
+	TagsFilter []string
 }
 
 // Returns a list of all posts.
@@ -85,13 +86,27 @@ func (svc postsService) ListPosts(opts *ListPostOptions) ([]*Post, error) {
 			return err
 		}
 
-		if opts != nil && opts.SearchTerm != "" {
+		if opts == nil {
+			posts = append(posts, p)
+			return nil
+		}
+
+		if opts.SearchTerm != "" {
 			if strings.Contains(p.Title, opts.SearchTerm) || strings.Contains(p.Content, opts.SearchTerm) {
 				posts = append(posts, p)
-
+				return nil
 			}
-		} else {
-			posts = append(posts, p)
+		}
+
+		if len(opts.TagsFilter) > 0 {
+			for _, t := range opts.TagsFilter {
+				for _, pt := range p.Tags {
+					if string(pt) == t {
+						posts = append(posts, p)
+						return nil
+					}
+				}
+			}
 		}
 
 		return nil
