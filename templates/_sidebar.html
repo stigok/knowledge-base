@@ -1,7 +1,7 @@
 <h2>Folders</h2>
 
 {{ define "posts_tree" }}
-<ul class="{{ if not .Label }}list-unstyled{{ end }}">
+<ul class="tree {{ if not .Label }}list-unstyled{{ end }}">
   <li>{{ .Label }}
     {{ range .Children }}
     {{ template "posts_tree" . }}
