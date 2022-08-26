@@ -381,12 +381,6 @@ func (app *App) RenderMarkdownHandler() http.HandlerFunc {
 }
 
 func (app *App) SearchHandler() http.HandlerFunc {
-	//renderer := html.NewRenderer(
-	//	html.RendererOptions{Flags: html.CommonFlags | html.HrefTargetBlank},
-	//)
-	// Strip all HTML after markdown, to get clear text
-	//bm := bluemonday.NewPolicy()
-
 	return func(w http.ResponseWriter, r *http.Request) {
 		q := r.FormValue("q")
 
