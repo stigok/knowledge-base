@@ -30,7 +30,7 @@
       </div>
     </div>
     <footer class="text-muted">
-      <p>Created at 2020-08-01 15:44, updated at 2020-08-01 15:44 UTC+1</p>
+      <p class="small">Created at {{ .Post.CreatedTime.Format "2006-01-02 15:04:05" }}<br>Updated at {{ .Post.ModifiedTime.Format "2006-01-02 15:04:05" }}</p>
       <button type="button" class="btn btn-success btn-sm" @click="save">Save</button>
     </footer>
   </div>
