@@ -1,6 +1,6 @@
 module knowledge-base
 
-go 1.18
+go 1.19
 
 require (
 	github.com/gomarkdown/markdown v0.0.0-20220817224203-2206187d3406
