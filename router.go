@@ -65,6 +65,7 @@ func (router *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if paramNames := route.pattern.SubexpNames(); len(paramNames) > 1 {
 			ctx := r.Context()
 			for _, param := range route.pattern.SubexpNames()[1:] {
+				//lint:ignore SA1029 don't see an alternative right now
 				ctx = context.WithValue(ctx, param, m[route.pattern.SubexpIndex(param)])
 			}
 			r = r.WithContext(ctx)

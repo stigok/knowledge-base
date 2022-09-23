@@ -112,6 +112,10 @@ func (app *App) IndexHandler() http.HandlerFunc {
 			SearchTerm: searchQ,
 			TagsFilter: strings.Split(searchTags, ","),
 		})
+		if err != nil {
+			log.Printf("error: failed to list posts: %v", err)
+			return
+		}
 
 		tags, err := app.posts.ListTags(&ListTagOptions{IgnoreFunctional: true})
 		if err != nil {

@@ -96,6 +96,7 @@ func TestRouterMethods(t *testing.T) {
 		router := Router{}
 		router.Use(func(next http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				//lint:ignore SA1029 n/a
 				ctx := context.WithValue(r.Context(), "foo", "bar")
 				next.ServeHTTP(w, r.WithContext(ctx))
 			})

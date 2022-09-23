@@ -192,7 +192,7 @@ func (svc postsService) ListTags(opts *ListTagOptions) ([]Tag, error) {
 	}
 
 	var tags []Tag
-	for tag, _ := range uniqueTags {
+	for tag := range uniqueTags {
 		tags = append(tags, tag)
 	}
 	sort.Slice(tags, func(i, j int) bool {
