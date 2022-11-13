@@ -63,10 +63,21 @@ func TestListPosts(t *testing.T) {
 		is.NoErr(err)
 	}
 
-	posts, err := app.ListPosts(nil)
-	is.NoErr(err)
-	is.True(posts != nil)
-	is.Equal(len(posts), 10)
+	t.Run("nil options", func(t *testing.T) {
+		is := is.New(t)
+		posts, err := app.ListPosts(nil)
+		is.NoErr(err)
+		is.True(posts != nil)
+		is.Equal(len(posts), 10)
+	})
+
+	t.Run("empty struct options", func(t *testing.T) {
+		is := is.New(t)
+		posts, err := app.ListPosts(&ListPostOptions{})
+		is.NoErr(err)
+		is.True(posts != nil)
+		is.Equal(len(posts), 10)
+	})
 	// TODO: they are not sorted by time for some reason.
 	// - ksuid is supposed to be naturally sortable by time
 	// - os.WalkDir is supposed to walk directories lexicographically
