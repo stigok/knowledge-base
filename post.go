@@ -117,11 +117,11 @@ func (svc postsService) ListPosts(opts *ListPostOptions) ([]*Post, error) {
 		}
 
 		for _, pred := range filters {
-			if !pred(p) {
+			if pred(p) {
+				posts = append(posts, p)
 				break
 			}
 		}
-		posts = append(posts, p)
 		return nil
 	})
 	if err != nil {
