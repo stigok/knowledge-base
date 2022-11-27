@@ -76,8 +76,12 @@ func (svc postsService) ListPosts(opts *ListPostOptions) ([]*Post, error) {
 				return true
 			}
 
-			return strings.Contains(p.Title, opts.SearchTerm) ||
-				strings.Contains(p.Content, opts.SearchTerm)
+			x := strings.ToLower(opts.SearchTerm)
+			a := strings.ToLower(p.Title)
+			b := strings.ToLower(p.Content)
+
+			return strings.Contains(a, x) ||
+				strings.Contains(b, x)
 		},
 		// Filter on tags
 		func(p *Post) bool {
