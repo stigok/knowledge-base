@@ -1,5 +1,6 @@
-{{ template "_header.html" }}
+{{ template "header" .Globals }}
 
+{{ with .Locals }}
 <header class="p-3 bg-secondary bg-opacity-25 mb-3">
   <div class="d-flex">
     <h1 class="h4 d-inline-block flex-item flex-grow-1 mb-0">{{ .Post.Title }}</h1>
@@ -23,5 +24,6 @@
     {{ .ContentHTML }}
   </article>
 </div>
+{{ end }}
 
-{{ template "_footer.html" }}
+{{ template "footer" .Globals }}

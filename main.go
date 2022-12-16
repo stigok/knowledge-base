@@ -102,6 +102,37 @@ func (app *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	app.router.ServeHTTP(w, r)
 }
 
+type Globals struct {
+	PostsTree *Node
+	AllTags   []Tag
+}
+
+type Locals struct {
+	Globals Globals
+	Locals  any
+}
+
+func (app *App) buildLocals(extra any) *Locals {
+	postsTree, err := app.posts.GetPostsFolderTree()
+	if err != nil {
+		log.Printf("error: failed to get posts folder tree: %v", err)
+	}
+
+	tags, err := app.posts.ListTags(&ListTagOptions{IgnoreFunctional: true})
+	if err != nil {
+		log.Printf("error: failed to get tags: %v", err)
+		tags = nil
+	}
+
+	return &Locals{
+		Globals: Globals{
+			PostsTree: postsTree,
+			AllTags:   tags,
+		},
+		Locals: extra,
+	}
+}
+
 func (app *App) IndexHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		searchQ := r.FormValue("q")
@@ -117,26 +148,12 @@ func (app *App) IndexHandler() http.HandlerFunc {
 			return
 		}
 
-		tags, err := app.posts.ListTags(&ListTagOptions{IgnoreFunctional: true})
-		if err != nil {
-			log.Printf("error: failed to get tags: %v", err)
-			tags = nil
-		}
-
-		postsTree, err := app.posts.GetPostsFolderTree()
-		if err != nil {
-			log.Printf("error: failed to get posts folder tree: %v", err)
-		}
-
-		locals := struct {
-			Posts     []*Post
-			AllTags   []Tag
-			PostsTree *Node
+		locals := app.buildLocals(struct {
+			Posts []*Post
 		}{
-			Posts:     posts,
-			AllTags:   tags,
-			PostsTree: postsTree,
-		}
+			Posts: posts,
+		})
+
 		if err := app.templates.ExecuteTemplate(w, "index.html", locals); err != nil {
 			log.Printf("error: template: %v", err)
 		}
@@ -285,10 +302,10 @@ func (app *App) GetPostHandler() http.HandlerFunc {
 		bm := bluemonday.UGCPolicy()
 		s = bm.Sanitize(s)
 
-		locals := GetPostResponse{
+		locals := app.buildLocals(GetPostResponse{
 			Post:        post,
 			ContentHTML: template.HTML(s),
-		}
+		})
 		if err := app.templates.ExecuteTemplate(w, "post.html", locals); err != nil {
 			log.Printf("error: template: %v", err)
 		}

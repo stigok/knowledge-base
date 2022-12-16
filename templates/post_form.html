@@ -1,4 +1,6 @@
-{{ template "_header.html" }}
+{{ template "header" .Globals }}
+
+{{ with .Locals }}
 
 <div class="container-fluid my-3">
   <div id="post" class="post">
@@ -134,4 +136,6 @@
 
 </script>
 
-{{ template "_footer.html" }}
+{{ end }}
+
+{{ template "footer" .Globals }}

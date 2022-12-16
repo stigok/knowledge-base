@@ -1,18 +1,13 @@
-{{ template "_header.html" }}
+{{ template "header" .Globals }}
 
-<div class="container-fluid d-flex mt-3">
-  <aside id="sidebar" class="flex-item me-3">
-    {{ template "_sidebar.html" . }}
-  </aside>
-  <div class="flex-item flex-grow-1">
-    {{ range .Posts }}
-    <div>
-      <strong>{{ .CreatedTime.Format "2006-01-02" }}</strong> <a href="/posts/{{ .ID }}">{{ .Title }}</a>
-    </div>
-    {{ else }}
-    <p>No posts to show.</p>
-    {{ end }}
-  </div>
+{{ with .Locals }}
+{{ range .Posts }}
+<div>
+  <strong>{{ .CreatedTime.Format "2006-01-02" }}</strong> <a href="/posts/{{ .ID }}">{{ .Title }}</a>
 </div>
+{{ else }}
+<p>No posts to show.</p>
+{{ end }}
+{{ end }}
 
-{{ template "_footer.html" }}
+{{ template "footer" .Globals }}
