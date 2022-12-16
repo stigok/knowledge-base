@@ -1,5 +1,3 @@
-<h2>Folders</h2>
-
 {{ define "posts_tree" }}
 <ul class="tree list-unstyled {{ if not .Label }}ps-0{{ else }}ps-2{{ end }}">
   <li>{{ if .Label }}<i class="bi-folder"></i> {{ .Label }}{{ end }}
@@ -20,7 +18,6 @@
 
 {{ template "posts_tree" .PostsTree }}
 
-<h2>Tags</h2>
 <ul class="list-unstyled">
   {{ range .AllTags }}
   <li class="badge bg-success"><a href="/?tags={{ . }}">{{ . }}</a></li>
