@@ -44,6 +44,13 @@ func TestPosts(t *testing.T) {
 		postId = posts[0].ID
 	})
 
+	t.Run("list supports an empty options struct", func(t *testing.T) {
+		is := is.New(t)
+		posts, err := svc.ListPosts(&ListPostOptions{})
+		is.NoErr(err)
+		is.Equal(len(posts), 1)
+	})
+
 	t.Run("get the created post", func(t *testing.T) {
 		is := is.New(t)
 		post, err := svc.GetPost(postId)
