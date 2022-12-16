@@ -17,6 +17,7 @@
   -->
   <!--<script src="/static/js/vue-2.6.14.js"></script>-->
   <script src="/static/js/vue-3.min.js"></script>
+  <script src="/static/js/htmx-1.8.4.min.js"></script>
 
 </head>
 
@@ -96,9 +97,9 @@
       <aside id="sidebar" class="flex-item me-3">
         {{ template "_sidebar.html" . }}
       </aside>
-      <div class="flex-item flex-grow-1">
+      <div id="main" class="flex-item flex-grow-1">
 {{ end }}
-
+{{/* Main content goes here */}}
 {{ define "footer" }}
       </div>
     </div>

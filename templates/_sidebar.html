@@ -10,7 +10,7 @@
     {{ if .Value }}
     <ul class="list-unstyled ps-1">
       {{ range .Value }}
-      <li><i class="bi-file-text"></i> <a href="/posts/{{ .ID }}">{{ .Title }}</a></li>
+      <li><i class="bi-file-text"></i> <a hx-target="#main" hx-push-url="true" hx-get="/posts/{{ .ID }}" hx-trigger="click" href="/posts/{{ .ID }}" hx-swap="innerHTML" hx-select="#main">{{ .Title }}</a></li>
       {{ end }}
     </ul>
     {{ end }}
