@@ -16,14 +16,6 @@
   height: 100%;
 }
 
-.tree {
-  padding-left: .5rem;
-}
-
-.tree ul {
-  padding-left: 1rem;
-}
-
 /* Specifics */
 #sidebar {
   width: 20vw;

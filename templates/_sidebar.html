@@ -1,16 +1,16 @@
 <h2>Folders</h2>
 
 {{ define "posts_tree" }}
-<ul class="tree {{ if not .Label }}list-unstyled{{ end }}">
-  <li>{{ .Label }}
+<ul class="tree list-unstyled {{ if not .Label }}ps-0{{ else }}ps-2{{ end }}">
+  <li>{{ if .Label }}<i class="bi-folder"></i> {{ .Label }}{{ end }}
     {{ range .Children }}
     {{ template "posts_tree" . }}
     {{ end }}
 
     {{ if .Value }}
-    <ul>
+    <ul class="list-unstyled ps-1">
       {{ range .Value }}
-      <li><a href="/posts/{{ .ID }}">{{ .Title }}</a></li>
+      <li><i class="bi-file-text"></i> <a href="/posts/{{ .ID }}">{{ .Title }}</a></li>
       {{ end }}
     </ul>
     {{ end }}
