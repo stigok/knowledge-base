@@ -19,6 +19,7 @@
 /* Specifics */
 #sidebar {
   width: 20vw;
+  min-width: 20vw;
 }
 
 .post {
