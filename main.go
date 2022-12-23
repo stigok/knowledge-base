@@ -88,6 +88,7 @@ func NewApp(postsRoot, listenAddr string) *App {
 	app.router.Get("^/posts/?$", app.CreatePostHandler())
 	app.router.Post("^/posts/?$", app.CreatePostHandler())
 	app.router.Get(`^/posts/(?P<id>\w+)$`, app.GetPostHandler())
+	app.router.Patch(`^/posts/(?P<id>\w+)$`, app.PatchPostHandler())
 	app.router.Get(`^/posts/(?P<id>\w+)/edit$`, app.UpdatePostHandler())
 	app.router.Post(`^/posts/(?P<id>\w+)/edit$`, app.UpdatePostHandler())
 	app.router.Post(`^/render-markdown$`, app.RenderMarkdownHandler())
@@ -157,6 +158,47 @@ func (app *App) IndexHandler() http.HandlerFunc {
 		if err := app.templates.ExecuteTemplate(w, "index.html", locals); err != nil {
 			log.Printf("error: template: %v", err)
 		}
+	}
+}
+
+type PatchPostRequest struct {
+	Title   string
+	Content string
+	Tags    []Tag
+}
+
+func (app *App) PatchPostHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		postID := r.Context().Value("id").(string)
+		post, err := app.posts.GetPost(postID)
+		if err != nil {
+			log.Printf("error: UpdatePostHandler: %v", err)
+			http.Error(w, fmt.Sprintf("%v", err), 404)
+			return
+		}
+
+		if err := r.ParseForm(); err != nil {
+			log.Printf("error: PatchPostHandler: %v", err)
+			http.Error(w, fmt.Sprintf("%v", err), 400)
+		}
+
+		log.Printf("debug: UpdatePostHandler: form values: %v", r.Form)
+
+		if v, ok := r.Form["title"]; ok {
+			post.Title = v[0]
+		}
+
+		//post.Content = req.Content
+		//post.Tags = req.Tags
+
+		if err := app.posts.UpdatePost(post); err != nil {
+			log.Printf("error: PatchPostHandler: %v", err)
+			http.Error(w, fmt.Sprintf("%v", err), 400)
+			return
+		}
+
+		w.Header().Set("Location", "/posts/"+post.ID)
+		w.WriteHeader(http.StatusNoContent)
 	}
 }
 
@@ -232,7 +274,12 @@ func (app *App) CreatePostHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// GET
 		if r.Method == http.MethodGet {
-			if err := app.templates.ExecuteTemplate(w, "post_form.html", nil); err != nil {
+			locals := app.buildLocals(struct {
+				Post *Post
+			}{
+				Post: &Post{},
+			})
+			if err := app.templates.ExecuteTemplate(w, "post_form.html", locals); err != nil {
 				log.Printf("error: template: %v", err)
 			}
 			return

@@ -32,6 +32,16 @@ func (r *Router) Post(pat string, handler http.Handler) {
 }
 
 // Get adds a route that matches the HTTP GET method.
+func (r *Router) Patch(pat string, handler http.Handler) {
+	route := Route{
+		method:  http.MethodPatch,
+		pattern: regexp.MustCompile(pat),
+		handler: handler,
+	}
+	r.routes = append(r.routes, route)
+}
+
+// Get adds a route that matches the HTTP GET method.
 func (r *Router) Use(handler func(http.Handler) http.Handler) {
 	r.middlewares = append(r.middlewares, handler)
 }
