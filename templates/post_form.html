@@ -1,141 +1,46 @@
 {{ template "header" .Globals }}
+{{ $g := .Globals }}
 
 {{ with .Locals }}
 
 <div class="container-fluid my-3">
-  <div id="post" class="post">
-    <div class="form-group">
-      <label for="title" class="h5">Title</label>
-      <input class="form-control" type="text" id="title" name="title" v-model="title" @keyup.enter="save">
-    </div>
-
-    <!-- Tags -->
-    <div>
-      <label for="tags" class="h5">Tags</label>
-      <input class="form-control" id="tags" list="datalistTags" placeholder="tag name" @keyup.enter="addTag">
-      <datalist id="datalistTags">
-        <option v-for="tag in allTags" :value="tag">$( tag )</option>
-      </datalist>
-    </div>
-
-    <ul class="list-unstyled mt-2">
-      <li class="badge bg-success me-1" v-for="tag in tags">
-        $( tag )
-        <button type="button" @click="removeTag(tag)" class="btn btn-sm btn-link text-white p-0 text-decoration-none">✕</button>
-      </li>
-    </ul>
-
-
-    <div class="d-flex post-content">
-      <textarea class="w-50 p-3 me-0 border-1 min-height-50" name="content" v-model="content" @input="update"></textarea>
-      <div class="w-50 overflow-scroll bg-secondary bg-opacity-25 border-1 min-height-50 p-3" v-html="contentCompiled">
+  <form action="" method="post">
+    <div id="post" class="post">
+      <div class="form-group">
+        <h1>POST FORM</h1>
+        <label for="title" class="h5">Title</label>
+        <input class="form-control" type="text" name="title" value="{{ .Post.Title }}">
       </div>
+
+      <!-- Tags -->
+      <div>
+        <label for="tags" class="h5">Tags</label>
+        <input class="form-control"
+               id="tags"
+               placeholder="tag1,tag2,tag3"
+               value="{{ range $i, $tag := .Post.Tags }}{{ if $i }},{{ end }}{{ $tag }}{{ end }}"
+               >
+        <!--
+        <input class="form-control" id="tags" list="datalistTags" placeholder="tag">
+        <datalist id="datalistTags">
+          {{ range $_, $t := $g.AllTags }}
+          <option value="{{ $t }}">{{ $t }}</option>
+          {{ end }}
+        </datalist>-->
+      </div>
+
+      <div class="d-flex post-content">
+        <textarea class="w-50 p-3 me-0 border-1 min-height-50" name="markdown" hx-post="/render-markdown" hx-trigger="keyup changed delay:250ms" hx-target="#rendered"></textarea>
+        <div id="rendered" class="w-50 overflow-scroll bg-secondary bg-opacity-25 border-1 min-height-50 p-3">
+        </div>
+      </div>
+      <footer class="text-muted">
+        <p class="small">Created at {{ .Post.CreatedTime.Format "2006-01-02 15:04:05" }}<br>Updated at {{ .Post.ModifiedTime.Format "2006-01-02 15:04:05" }}</p>
+        <button type="submit" type="submit" class="btn btn-success btn-sm">Save</button>
+      </footer>
     </div>
-    <footer class="text-muted">
-      <p class="small">Created at {{ .Post.CreatedTime.Format "2006-01-02 15:04:05" }}<br>Updated at {{ .Post.ModifiedTime.Format "2006-01-02 15:04:05" }}</p>
-      <button type="button" class="btn btn-success btn-sm" @click="save">Save</button>
-    </footer>
-  </div>
+  </form>
 </div>
-
-<script>
-  /* global Vue */
-  /* global _ */
-  /* global DOMPurify */
-  /* global marked */
-  'use strict'
-
-  Vue.createApp({
-    delimiters: ['$(', ')'],
-    props: {
-      // All previously used tags to help with auto-completion
-      allTags: {
-        type: Array,
-        default: []
-      }
-    },
-    data: function() {
-      return {
-        title: "{{ .Post.Title }}",
-        content: "{{ .Post.Content }}",
-        contentCompiled: "",
-        tags: [
-          {{ range .Post.Tags }} "{{ . }}", {{ end }}
-        ],
-      }
-    },
-    mounted() {
-      this.update()
-    },
-    methods: {
-      compileMarkdown: function() {
-        fetch("/render-markdown", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              Markdown: this.content,
-            })
-          })
-          .then((res) => {
-            if (res.status !== 200) {
-              return Promise.reject({
-                msg: "failed to render markdown",
-                res
-              })
-            }
-            return res.text()
-          })
-          .then((html) => {
-            this.contentCompiled = html
-          })
-          .catch((err) => {
-            console.error(err)
-          })
-      },
-      update: _.debounce(function() {
-        this.contentCompiled = this.compileMarkdown()
-      }, 300),
-      addTag: function(e) {
-        const tag = e.target.value
-        if (this.tags.indexOf(tag) === -1) {
-          this.tags.push(tag)
-        }
-        e.target.value = ''
-      },
-      removeTag: function(tag) {
-        const idx = this.tags.indexOf(tag)
-        if (idx > -1) {
-          this.tags.splice(idx, 1)
-        }
-      },
-      save: function() {
-        fetch(window.location.pathname, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              Title: this.title,
-              Content: this.content,
-              Tags: this.tags,
-            })
-          })
-          .then((res) => res.json())
-          .then((post) => {
-            this.postId = post.ID
-            const loc = window.location
-            window.location.href = loc.protocol + "//" + loc.host + "/posts/" + post.ID
-          }).catch((err) => {
-            console.error(err)
-          })
-      }
-    }
-  }).mount('#post')
-
-</script>
-
 {{ end }}
 
 {{ template "footer" .Globals }}

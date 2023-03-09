@@ -287,37 +287,26 @@ func (app *App) CreatePostHandler() http.HandlerFunc {
 
 		// POST
 		if r.Method == http.MethodPost {
-			body, err := io.ReadAll(r.Body)
-			if err != nil {
+			var tags []Tag
+			for _, s := range strings.Split(r.FormValue("tags"), ",") {
+				if len(s) > 0 {
+					tags = append(tags, Tag(s))
+				}
+			}
+
+			p := &Post{
+				Title:   r.FormValue("title"),
+				Tags:    tags,
+				Content: r.FormValue("content"),
+			}
+
+			if err := app.posts.CreatePost(p); err != nil {
 				log.Printf("error: CreatePostHandler: %v", err)
 				http.Error(w, fmt.Sprintf("%v", err), 400)
 				return
 			}
 
-			p := new(Post)
-			err = json.Unmarshal(body, p)
-			if err != nil {
-				log.Printf("error: CreatePostHandler: %v", err)
-				http.Error(w, fmt.Sprintf("%v", err), 400)
-				return
-			}
-
-			if err = app.posts.CreatePost(p); err != nil {
-				log.Printf("error: CreatePostHandler: %v", err)
-				http.Error(w, fmt.Sprintf("%v", err), 400)
-				return
-			}
-
-			b, err := json.Marshal(p)
-			if err != nil {
-				log.Printf("error: CreatePostHandler: %v", err)
-				http.Error(w, fmt.Sprintf("%v", err), 500)
-				return
-			}
-
-			w.Header().Set("Location", "/posts/"+p.ID)
-			w.WriteHeader(http.StatusCreated)
-			w.Write(b)
+			http.Redirect(w, r, "/posts/"+p.ID, http.StatusSeeOther)
 			return
 		}
 	}
@@ -416,10 +405,6 @@ func (app *App) StaticHandler(next http.Handler) http.Handler {
 	})
 }
 
-type RenderMarkdownRequest struct {
-	Markdown string
-}
-
 func (app *App) RenderMarkdownHandler() http.HandlerFunc {
 	renderer := html.NewRenderer(
 		html.RendererOptions{Flags: html.CommonFlags | html.HrefTargetBlank},
@@ -427,22 +412,8 @@ func (app *App) RenderMarkdownHandler() http.HandlerFunc {
 	bm := bluemonday.UGCPolicy()
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		defer r.Body.Close()
-		body, err := io.ReadAll(r.Body)
-		if err != nil {
-			log.Printf("error: RenderMarkdownHandler: %v", err)
-			http.Error(w, fmt.Sprintf("%v", err), 400)
-			return
-		}
-
-		req := new(RenderMarkdownRequest)
-		if err := json.Unmarshal(body, req); err != nil {
-			log.Printf("error: RenderMarkdownHandler: %v", err)
-			http.Error(w, fmt.Sprintf("%v", err), 400)
-			return
-		}
-
-		s := string(markdown.ToHTML([]byte(req.Markdown), nil, renderer))
+		md := r.FormValue("markdown")
+		s := string(markdown.ToHTML([]byte(md), nil, renderer))
 		s = bm.Sanitize(s)
 		w.Header().Set("Content-Type", "text/html")
 		fmt.Fprintf(w, "%s", s)
