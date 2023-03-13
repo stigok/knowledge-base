@@ -218,26 +218,24 @@ func (app *App) UpdatePostHandler() http.HandlerFunc {
 			return
 		}
 
-		// POST
-		if r.Method == http.MethodPost {
-			body, err := io.ReadAll(r.Body)
-			if err != nil {
-				log.Printf("error: UpdatePostHandler: %v", err)
-				http.Error(w, fmt.Sprintf("%v", err), 400)
-				return
+		if r.Method == http.MethodGet {
+			locals := app.buildLocals(struct {
+				Post *Post
+			}{
+				Post: post,
+			})
+			if err := app.templates.ExecuteTemplate(w, "post_form.html", locals); err != nil {
+				log.Printf("error: template: %v", err)
 			}
+		} else if r.Method == http.MethodPost {
 
-			req := new(UpdatePostRequest)
-			err = json.Unmarshal(body, req)
-			if err != nil {
-				log.Printf("error: UpdatePostHandler: %v", err)
-				http.Error(w, fmt.Sprintf("%v", err), 400)
-				return
+			post.Title = r.FormValue("title")
+			post.Content = r.FormValue("content")
+			for _, s := range strings.Split(r.FormValue("tags"), ",") {
+				if len(s) > 0 {
+					post.Tags = append(post.Tags, Tag(s))
+				}
 			}
-
-			post.Title = req.Title
-			post.Content = req.Content
-			post.Tags = req.Tags
 
 			if err := app.posts.UpdatePost(post); err != nil {
 				log.Printf("error: UpdatePostHandler: %v", err)
@@ -245,27 +243,8 @@ func (app *App) UpdatePostHandler() http.HandlerFunc {
 				return
 			}
 
-			b, err := json.Marshal(post)
-			if err != nil {
-				log.Printf("error: UpdatePostHandler: %v", err)
-				http.Error(w, fmt.Sprintf("%v", err), 500)
-				return
-			}
-
-			w.Header().Set("Location", "/posts/"+post.ID)
-			w.WriteHeader(http.StatusCreated)
-			w.Write(b)
+			http.Redirect(w, r, "/posts/"+post.ID, http.StatusSeeOther)
 			return
-		}
-
-		// GET
-		locals := struct {
-			Post *Post
-		}{
-			Post: post,
-		}
-		if err := app.templates.ExecuteTemplate(w, "post_form.html", locals); err != nil {
-			log.Printf("error: template: %v", err)
 		}
 	}
 }
@@ -412,7 +391,7 @@ func (app *App) RenderMarkdownHandler() http.HandlerFunc {
 	bm := bluemonday.UGCPolicy()
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		md := r.FormValue("markdown")
+		md := r.FormValue("content")
 		s := string(markdown.ToHTML([]byte(md), nil, renderer))
 		s = bm.Sanitize(s)
 		w.Header().Set("Content-Type", "text/html")

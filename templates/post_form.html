@@ -7,7 +7,6 @@
   <form action="" method="post">
     <div id="post" class="post">
       <div class="form-group">
-        <h1>POST FORM</h1>
         <label for="title" class="h5">Title</label>
         <input class="form-control" type="text" name="title" value="{{ .Post.Title }}">
       </div>
@@ -30,7 +29,7 @@
       </div>
 
       <div class="d-flex post-content">
-        <textarea class="w-50 p-3 me-0 border-1 min-height-50" name="markdown" hx-post="/render-markdown" hx-trigger="keyup changed delay:250ms" hx-target="#rendered"></textarea>
+        <textarea class="w-50 p-3 me-0 border-1 min-height-50" name="content" hx-post="/render-markdown" hx-trigger="keyup changed delay:250ms" hx-target="#rendered">{{ .Post.Content }}</textarea>
         <div id="rendered" class="w-50 overflow-scroll bg-secondary bg-opacity-25 border-1 min-height-50 p-3">
         </div>
       </div>
