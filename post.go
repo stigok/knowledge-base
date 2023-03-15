@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"io/fs"
 	"os"
 	"path"
@@ -10,6 +11,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gomarkdown/markdown"
+	"github.com/gomarkdown/markdown/html"
+	"github.com/microcosm-cc/bluemonday"
 	"github.com/segmentio/ksuid"
 )
 
@@ -42,6 +46,17 @@ type Post struct {
 	Tags         []Tag
 	CreatedTime  time.Time
 	ModifiedTime time.Time
+}
+
+var renderer = html.NewRenderer(
+	html.RendererOptions{Flags: html.CommonFlags | html.HrefTargetBlank},
+)
+var sanitizer = bluemonday.UGCPolicy()
+
+func (p *Post) ContentHTML() template.HTML {
+	s := string(markdown.ToHTML([]byte(p.Content), nil, renderer))
+	s = sanitizer.Sanitize(s)
+	return template.HTML(s)
 }
 
 // Returns a single post by ID.

@@ -83,14 +83,14 @@ func NewApp(postsRoot, listenAddr string) *App {
 	// Routes
 	app.router.Use(app.LogHandler)
 	app.router.Use(app.StaticHandler)
+
 	app.router.Get("^/$", app.IndexHandler())
 
-	app.router.Get("^/posts/?$", app.CreatePostHandler())
-	app.router.Post("^/posts/?$", app.CreatePostHandler())
-	app.router.Get(`^/posts/(?P<id>\w+)$`, app.GetPostHandler())
-	app.router.Patch(`^/posts/(?P<id>\w+)$`, app.PatchPostHandler())
-	app.router.Get(`^/posts/(?P<id>\w+)/edit$`, app.UpdatePostHandler())
-	app.router.Post(`^/posts/(?P<id>\w+)/edit$`, app.UpdatePostHandler())
+	app.router.Get("^/posts/?$", app.PostHandler())
+	app.router.Post("^/posts/?$", app.PostHandler())
+	app.router.Get(`^/posts/(?P<id>\w+)$`, app.PostHandler())
+	app.router.Post(`^/posts/(?P<id>\w+)$`, app.PostHandler())
+
 	app.router.Post(`^/render-markdown$`, app.RenderMarkdownHandler())
 
 	app.router.Get(`^/api/search$`, app.SearchHandler())
@@ -161,68 +161,31 @@ func (app *App) IndexHandler() http.HandlerFunc {
 	}
 }
 
-type PatchPostRequest struct {
-	Title   string
-	Content string
-	Tags    []Tag
-}
-
-func (app *App) PatchPostHandler() http.HandlerFunc {
+func (app *App) PostHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		postID := r.Context().Value("id").(string)
-		post, err := app.posts.GetPost(postID)
-		if err != nil {
-			log.Printf("error: UpdatePostHandler: %v", err)
-			http.Error(w, fmt.Sprintf("%v", err), 404)
-			return
-		}
+		var (
+			post *Post
+			err  error
+		)
 
-		if err := r.ParseForm(); err != nil {
-			log.Printf("error: PatchPostHandler: %v", err)
-			http.Error(w, fmt.Sprintf("%v", err), 400)
-		}
-
-		log.Printf("debug: UpdatePostHandler: form values: %v", r.Form)
-
-		if v, ok := r.Form["title"]; ok {
-			post.Title = v[0]
-		}
-
-		//post.Content = req.Content
-		//post.Tags = req.Tags
-
-		if err := app.posts.UpdatePost(post); err != nil {
-			log.Printf("error: PatchPostHandler: %v", err)
-			http.Error(w, fmt.Sprintf("%v", err), 400)
-			return
-		}
-
-		w.Header().Set("Location", "/posts/"+post.ID)
-		w.WriteHeader(http.StatusNoContent)
-	}
-}
-
-type UpdatePostRequest struct {
-	Title   string
-	Content string
-	Tags    []Tag
-}
-
-func (app *App) UpdatePostHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		postID := r.Context().Value("id").(string)
-		post, err := app.posts.GetPost(postID)
-		if err != nil {
-			log.Printf("error: UpdatePostHandler: %v", err)
-			http.Error(w, fmt.Sprintf("%v", err), 404)
-			return
+		if postID, ok := r.Context().Value("id").(string); ok {
+			post, err = app.posts.GetPost(postID)
+			if err != nil {
+				log.Printf("error: UpdatePostHandler: %v", err)
+				http.Error(w, fmt.Sprintf("%v", err), 404)
+				return
+			}
+		} else {
+			post = new(Post)
 		}
 
 		if r.Method == http.MethodGet {
 			locals := app.buildLocals(struct {
-				Post *Post
+				Post      *Post
+				IsEditing bool
 			}{
-				Post: post,
+				Post:      post,
+				IsEditing: post.ID == "" || r.URL.Query().Has("isEditing"),
 			})
 			if err := app.templates.ExecuteTemplate(w, "post_form.html", locals); err != nil {
 				log.Printf("error: template: %v", err)
@@ -237,92 +200,22 @@ func (app *App) UpdatePostHandler() http.HandlerFunc {
 				}
 			}
 
-			if err := app.posts.UpdatePost(post); err != nil {
-				log.Printf("error: UpdatePostHandler: %v", err)
-				http.Error(w, fmt.Sprintf("%v", err), 400)
-				return
+			if post.ID == "" {
+				if err := app.posts.CreatePost(post); err != nil {
+					log.Printf("error: UpdatePostHandler: %v", err)
+					http.Error(w, fmt.Sprintf("%v", err), 400)
+					return
+				}
+			} else {
+				if err := app.posts.UpdatePost(post); err != nil {
+					log.Printf("error: UpdatePostHandler: %v", err)
+					http.Error(w, fmt.Sprintf("%v", err), 400)
+					return
+				}
 			}
 
 			http.Redirect(w, r, "/posts/"+post.ID, http.StatusSeeOther)
 			return
-		}
-	}
-}
-
-func (app *App) CreatePostHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		// GET
-		if r.Method == http.MethodGet {
-			locals := app.buildLocals(struct {
-				Post *Post
-			}{
-				Post: &Post{},
-			})
-			if err := app.templates.ExecuteTemplate(w, "post_form.html", locals); err != nil {
-				log.Printf("error: template: %v", err)
-			}
-			return
-		}
-
-		// POST
-		if r.Method == http.MethodPost {
-			var tags []Tag
-			for _, s := range strings.Split(r.FormValue("tags"), ",") {
-				if len(s) > 0 {
-					tags = append(tags, Tag(s))
-				}
-			}
-
-			p := &Post{
-				Title:   r.FormValue("title"),
-				Tags:    tags,
-				Content: r.FormValue("content"),
-			}
-
-			if err := app.posts.CreatePost(p); err != nil {
-				log.Printf("error: CreatePostHandler: %v", err)
-				http.Error(w, fmt.Sprintf("%v", err), 400)
-				return
-			}
-
-			http.Redirect(w, r, "/posts/"+p.ID, http.StatusSeeOther)
-			return
-		}
-	}
-}
-
-type GetPostResponse struct {
-	*Post
-	ContentHTML template.HTML
-}
-
-func (app *App) GetPostHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		postID := r.Context().Value("id").(string)
-
-		post, err := app.posts.GetPost(postID)
-		if err != nil {
-			log.Printf("error: GetPostHandler: %v", err)
-			http.Error(w, fmt.Sprintf("%v", err), 400)
-			return
-		}
-
-		// Render HTML from markdown
-		renderer := html.NewRenderer(
-			html.RendererOptions{Flags: html.CommonFlags | html.HrefTargetBlank},
-		)
-		s := string(markdown.ToHTML([]byte(post.Content), nil, renderer))
-
-		// Sanitize
-		bm := bluemonday.UGCPolicy()
-		s = bm.Sanitize(s)
-
-		locals := app.buildLocals(GetPostResponse{
-			Post:        post,
-			ContentHTML: template.HTML(s),
-		})
-		if err := app.templates.ExecuteTemplate(w, "post.html", locals); err != nil {
-			log.Printf("error: template: %v", err)
 		}
 	}
 }
