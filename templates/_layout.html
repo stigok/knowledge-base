@@ -17,7 +17,7 @@
 </head>
 
 <body>
-  <div id="app">
+  <div id="wrapper">
     <nav class="navbar navbar-expand-sm navbar-light" style="background-color: #e3f2fd;">
       <div class="container-fluid">
         <a class="navbar-brand" href="/">kbase</a>
@@ -45,11 +45,11 @@
       </div>
     </nav>
 
-    <div class="container-fluid d-flex mt-3">
+    <div class="container-fluid d-flex flex-grow-1 p-0">
       <aside id="sidebar" class="flex-item me-3">
         {{ template "_sidebar.html" . }}
       </aside>
-      <div id="main" class="flex-item flex-grow-1">
+      <div id="main" class="flex-item flex-grow-1 d-flex flex-column">
 {{ end }}
 {{/* Main content goes here */}}
 {{ define "footer" }}
