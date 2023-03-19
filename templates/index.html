@@ -1,6 +1,16 @@
 {{ template "header" .Globals }}
 
 {{ with .Locals }}
+
+<h1>Posts</h1>
+{{ if .TagQuery }}
+<h2>Matching tag: {{ .TagQuery }}</h2>
+{{ end }}
+{{ if .ContentQuery }}
+<h2>Matching content: {{ .ContentQuery }}</h2>
+{{ end }}
+
+
 {{ range .Posts }}
 <div>
   <strong>{{ .CreatedTime.Format "2006-01-02" }}</strong> <a href="/posts/{{ .ID }}">{{ .Title }}</a>
