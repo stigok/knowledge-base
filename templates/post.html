@@ -26,7 +26,13 @@
                value="{{ range $i, $tag := .Post.Tags }}{{ if $i }},{{ end }}{{ $tag }}{{ end }}"
                >
         {{ else }}
-        {{ range $i, $tag := .Post.Tags }}<span class="badge badge-primary">{{ $tag }}</span>{{ end }}
+        <ul class="list-unstyled">
+          {{ range .Post.Tags }}
+          <li class="badge bg-success"><a href="/?tags={{ . }}">{{ . }}</a></li>
+          {{ else }}
+          <li>(no tags)</li>
+          {{ end }}
+        </ul>
         {{ end }}
         <!--
         <input class="form-control" id="tags" list="datalistTags" placeholder="tag">
