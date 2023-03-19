@@ -187,7 +187,7 @@ func (app *App) PostHandler() http.HandlerFunc {
 				Post:      post,
 				IsEditing: post.ID == "" || r.URL.Query().Has("isEditing"),
 			})
-			if err := app.templates.ExecuteTemplate(w, "post_form.html", locals); err != nil {
+			if err := app.templates.ExecuteTemplate(w, "post.html", locals); err != nil {
 				log.Printf("error: template: %v", err)
 			}
 		} else if r.Method == http.MethodPost {
