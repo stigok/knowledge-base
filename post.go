@@ -80,38 +80,28 @@ type ListPostOptions struct {
 	TagsFilter []string
 }
 
+type FilterFunc func(*Post) bool
+
 // Returns a list of all posts.
 func (svc postsService) ListPosts(opts *ListPostOptions) ([]*Post, error) {
 	fileSystem := os.DirFS(svc.root)
 
-	filters := []func(*Post) bool{
-		// Filter on search term
-		func(p *Post) bool {
-			if opts.SearchTerm == "" {
-				return true
-			}
+	contentFilterFunc := func(p *Post) bool {
+		x := strings.ToLower(opts.SearchTerm)
+		a := strings.ToLower(p.Title)
+		b := strings.ToLower(p.Content)
+		return strings.Contains(a, x) || strings.Contains(b, x)
+	}
 
-			x := strings.ToLower(opts.SearchTerm)
-			a := strings.ToLower(p.Title)
-			b := strings.ToLower(p.Content)
-
-			return strings.Contains(a, x) ||
-				strings.Contains(b, x)
-		},
-		// Filter on tags
-		func(p *Post) bool {
-			if len(opts.TagsFilter) == 0 {
-				return true
-			}
-			for _, t := range opts.TagsFilter {
-				for _, pt := range p.Tags {
-					if string(pt) == t {
-						return true
-					}
+	tagFilterFunc := func(p *Post) bool {
+		for _, t := range opts.TagsFilter {
+			for _, pt := range p.Tags {
+				if string(pt) == t {
+					return true
 				}
 			}
-			return false
-		},
+		}
+		return false
 	}
 
 	var posts []*Post
@@ -135,12 +125,25 @@ func (svc postsService) ListPosts(opts *ListPostOptions) ([]*Post, error) {
 			return err
 		}
 
-		for _, pred := range filters {
-			if pred(p) {
+		doContentFilter := len(opts.SearchTerm) > 0
+		doTagsFilter := len(opts.TagsFilter) > 0
+
+		if doContentFilter && doTagsFilter {
+			if contentFilterFunc(p) && tagFilterFunc(p) {
 				posts = append(posts, p)
-				break
 			}
+		} else if doContentFilter {
+			if contentFilterFunc(p) {
+				posts = append(posts, p)
+			}
+		} else if doTagsFilter {
+			if tagFilterFunc(p) {
+				posts = append(posts, p)
+			}
+		} else {
+			posts = append(posts, p)
 		}
+
 		return nil
 	})
 	if err != nil {

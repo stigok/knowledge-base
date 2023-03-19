@@ -150,9 +150,13 @@ func (app *App) IndexHandler() http.HandlerFunc {
 		}
 
 		locals := app.buildLocals(struct {
-			Posts []*Post
+			Posts        []*Post
+			ContentQuery string
+			TagQuery     string
 		}{
-			Posts: posts,
+			Posts:        posts,
+			ContentQuery: searchQ,
+			TagQuery:     searchTags,
 		})
 
 		if err := app.templates.ExecuteTemplate(w, "index.html", locals); err != nil {
