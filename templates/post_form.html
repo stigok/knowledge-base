@@ -9,7 +9,7 @@
   {{ end }}
   <form action="/posts/{{ .Post.ID }}" method="post">
     <div>
-      <div class="form-group">
+      <div>
         {{ if .IsEditing }}
         <input class="form-control" type="text" name="title" value="{{ .Post.Title }}" placeholder="Title">
         {{ else }}
@@ -37,7 +37,7 @@
         </datalist>-->
       </div>
 
-      <div class="d-flex post-content">
+      <div class="d-flex">
         {{ if .IsEditing }}
         <textarea class="w-50 p-3 me-0 border-1 min-height-50" name="content" hx-post="/render-markdown" hx-trigger="keyup changed delay:250ms" hx-target="#rendered">{{ .Post.Content }}</textarea>
         <div id="rendered" class="w-50 overflow-scroll bg-secondary bg-opacity-25 border-1 min-height-50 p-3">
