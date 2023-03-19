@@ -80,7 +80,7 @@ func NewApp(postsRoot, listenAddr string) *App {
 		template.New("all").ParseFS(templateFS, "templates/*.html"))
 
 	// Routes
-	app.router.Use(app.LogHandler)
+	//app.router.Use(app.AccessLogHandler)
 	app.router.Use(app.StaticHandler)
 
 	app.router.Get("^/$", app.IndexHandler())
@@ -221,7 +221,7 @@ func (app *App) PostHandler() http.HandlerFunc {
 	}
 }
 
-func (app *App) LogHandler(next http.Handler) http.Handler {
+func (app *App) AccessLogHandler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("%s %s (body: %d bytes)\n", r.Method, r.URL.Path, r.ContentLength)
 		next.ServeHTTP(w, r)
