@@ -138,7 +138,9 @@ func (app *App) IndexHandler() http.HandlerFunc {
 		var searchTags []string
 		if q := r.FormValue("tags"); len(q) > 0 {
 			for _, t := range strings.Split(q, ",") {
-				searchTags = append(searchTags, t)
+				if len(t) > 0 {
+					searchTags = append(searchTags, t)
+				}
 			}
 		}
 		// Post content filter
@@ -200,6 +202,7 @@ func (app *App) PostHandler() http.HandlerFunc {
 
 			post.Title = r.FormValue("title")
 			post.Content = r.FormValue("content")
+			post.Tags = post.Tags[:0]
 			for _, s := range strings.Split(r.FormValue("tags"), ",") {
 				if len(s) > 0 {
 					post.Tags = append(post.Tags, Tag(s))

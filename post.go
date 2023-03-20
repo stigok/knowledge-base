@@ -59,6 +59,32 @@ func (p *Post) ContentHTML() template.HTML {
 	return template.HTML(s)
 }
 
+// cleanTags trims all tag names of spaces and removes duplicates.
+func (p *Post) cleanTags() {
+	var (
+		s string
+		i int
+		m = make(map[string]bool, 0)
+	)
+
+	fmt.Println("cleantags", p.Tags)
+	for ; i < len(p.Tags); i++ {
+		s = strings.TrimSpace(string(p.Tags[i]))
+		if s == "" {
+			p.Tags = append(p.Tags[:i], p.Tags[i+1:]...)
+			i--
+			continue
+		}
+		if _, exists := m[s]; !exists {
+			p.Tags[i] = Tag(s)
+			m[s] = true
+		} else {
+			p.Tags = append(p.Tags[:i], p.Tags[i+1:]...)
+			i--
+		}
+	}
+}
+
 // Returns a single post by ID.
 func (svc postsService) GetPost(id string) (*Post, error) {
 	filepath := path.Join(svc.root, id)
@@ -114,6 +140,7 @@ func (svc postsService) CreatePost(p *Post) error {
 	}
 
 	p.ID = id.String()
+	p.cleanTags()
 	p.CreatedTime = now
 	p.ModifiedTime = now
 
@@ -196,6 +223,7 @@ func (svc postsService) UpdatePost(p *Post) error {
 		return fmt.Errorf("UpdatePost: %w", err)
 	}
 
+	p.cleanTags()
 	p.ModifiedTime = time.Now()
 
 	b, err := json.Marshal(p)
