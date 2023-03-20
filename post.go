@@ -75,42 +75,11 @@ func (svc postsService) GetPost(id string) (*Post, error) {
 	return post, nil
 }
 
-type ListPostOptions struct {
-	SearchTerm string
-	TagsFilter []string
-}
+func (svc postsService) getAllPostIDs() ([]string, error) {
+	var ids []string
 
-type FilterFunc func(*Post) bool
-
-// Returns a list of all posts.
-func (svc postsService) ListPosts(opts *ListPostOptions) ([]*Post, error) {
-	fileSystem := os.DirFS(svc.root)
-
-	contentFilterFunc := func(p *Post) bool {
-		x := strings.ToLower(opts.SearchTerm)
-		a := strings.ToLower(p.Title)
-		b := strings.ToLower(p.Content)
-		return strings.Contains(a, x) || strings.Contains(b, x)
-	}
-
-	tagFilterFunc := func(p *Post) bool {
-		for _, t := range opts.TagsFilter {
-			for _, pt := range p.Tags {
-				if string(pt) == t {
-					return true
-				}
-			}
-		}
-		return false
-	}
-
-	var posts []*Post
-
-	if opts == nil {
-		opts = &ListPostOptions{}
-	}
-
-	err := fs.WalkDir(fileSystem, ".", func(path string, d fs.DirEntry, err error) error {
+	dirfs := os.DirFS(svc.root)
+	err := fs.WalkDir(dirfs, ".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -120,37 +89,20 @@ func (svc postsService) ListPosts(opts *ListPostOptions) ([]*Post, error) {
 		}
 
 		id := strings.TrimSuffix(strings.TrimPrefix(path, "./"), ".json")
-		p, err := svc.GetPost(id)
-		if err != nil {
-			return err
-		}
-
-		doContentFilter := len(opts.SearchTerm) > 0
-		doTagsFilter := len(opts.TagsFilter) > 0
-
-		if doContentFilter && doTagsFilter {
-			if contentFilterFunc(p) && tagFilterFunc(p) {
-				posts = append(posts, p)
-			}
-		} else if doContentFilter {
-			if contentFilterFunc(p) {
-				posts = append(posts, p)
-			}
-		} else if doTagsFilter {
-			if tagFilterFunc(p) {
-				posts = append(posts, p)
-			}
-		} else {
-			posts = append(posts, p)
-		}
+		ids = append(ids, id)
 
 		return nil
 	})
 	if err != nil {
-		return nil, fmt.Errorf("ListPosts: %w", err)
+		return nil, err
 	}
 
-	return posts, nil
+	return ids, nil
+}
+
+type ListPostOptions struct {
+	SearchTerm string
+	TagsFilter []string
 }
 
 // Create a post. ID, CreatedTime and ModifiedTime will be overwritten if present.
@@ -176,6 +128,65 @@ func (svc postsService) CreatePost(p *Post) error {
 	}
 
 	return nil
+}
+
+// Returns a list of all posts.
+func (svc postsService) ListPosts(opts *ListPostOptions) ([]*Post, error) {
+	if opts == nil {
+		opts = &ListPostOptions{}
+	}
+
+	ids, err := svc.getAllPostIDs()
+	if err != nil {
+		return nil, err
+	}
+
+	contentFilterFunc := func(p *Post) bool {
+		x := strings.ToLower(opts.SearchTerm)
+		a := strings.ToLower(p.Title)
+		b := strings.ToLower(p.Content)
+		return strings.Contains(a, x) || strings.Contains(b, x)
+	}
+
+	tagFilterFunc := func(p *Post) bool {
+		for _, t := range opts.TagsFilter {
+			for _, pt := range p.Tags {
+				if string(pt) == t {
+					return true
+				}
+			}
+		}
+		return false
+	}
+
+	var posts []*Post
+	for _, id := range ids {
+		p, err := svc.GetPost(id)
+		if err != nil {
+			return nil, err
+		}
+
+		doContentFilter := len(opts.SearchTerm) > 0
+		doTagsFilter := len(opts.TagsFilter) > 0
+
+		if doContentFilter && doTagsFilter {
+			if contentFilterFunc(p) && tagFilterFunc(p) {
+				posts = append(posts, p)
+			}
+		} else if doContentFilter {
+			if contentFilterFunc(p) {
+				posts = append(posts, p)
+			}
+		} else if doTagsFilter {
+			if tagFilterFunc(p) {
+				posts = append(posts, p)
+			}
+		} else {
+			posts = append(posts, p)
+		}
+	}
+
+	return posts, nil
 }
 
 // Updates a posts title and content. All other fields are ignored.
