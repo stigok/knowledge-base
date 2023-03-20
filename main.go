@@ -179,7 +179,7 @@ func (app *App) PostHandler() http.HandlerFunc {
 		if postID, ok := r.Context().Value("id").(string); ok {
 			post, err = app.posts.GetPost(postID)
 			if err != nil {
-				log.Printf("error: UpdatePostHandler: %v", err)
+				log.Printf("error: PostHandler: %v", err)
 				http.Error(w, fmt.Sprintf("%v", err), 404)
 				return
 			}
@@ -211,13 +211,13 @@ func (app *App) PostHandler() http.HandlerFunc {
 
 			if post.ID == "" {
 				if err := app.posts.CreatePost(post); err != nil {
-					log.Printf("error: UpdatePostHandler: %v", err)
+					log.Printf("error: PostHandler: %v", err)
 					http.Error(w, fmt.Sprintf("%v", err), 400)
 					return
 				}
 			} else {
 				if err := app.posts.UpdatePost(post); err != nil {
-					log.Printf("error: UpdatePostHandler: %v", err)
+					log.Printf("error: PostHandler: %v", err)
 					http.Error(w, fmt.Sprintf("%v", err), 400)
 					return
 				}
