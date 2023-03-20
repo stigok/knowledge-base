@@ -48,14 +48,14 @@ type Post struct {
 	ModifiedTime time.Time
 }
 
-var renderer = html.NewRenderer(
+var mdRenderer = html.NewRenderer(
 	html.RendererOptions{Flags: html.CommonFlags | html.HrefTargetBlank},
 )
-var sanitizer = bluemonday.UGCPolicy()
+var htmlSanitizer = bluemonday.UGCPolicy()
 
 func (p *Post) ContentHTML() template.HTML {
-	s := string(markdown.ToHTML([]byte(p.Content), nil, renderer))
-	s = sanitizer.Sanitize(s)
+	s := string(markdown.ToHTML([]byte(p.Content), nil, mdRenderer))
+	s = htmlSanitizer.Sanitize(s)
 	return template.HTML(s)
 }
 
