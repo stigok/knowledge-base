@@ -134,12 +134,17 @@ func (app *App) buildLocals(extra any) *Locals {
 func (app *App) IndexHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		searchQ := r.FormValue("q")
-		searchTags := r.FormValue("tags")
 
+		var searchTags []string
+		if q := r.FormValue("tags"); len(q) > 0 {
+			for _, t := range strings.Split(q, ",") {
+				searchTags = append(searchTags, t)
+			}
+		}
 		// Post content filter
 		posts, err := app.posts.ListPosts(&ListPostOptions{
 			SearchTerm: searchQ,
-			TagsFilter: strings.Split(searchTags, ","),
+			TagsFilter: searchTags,
 		})
 		if err != nil {
 			log.Printf("error: failed to list posts: %v", err)
@@ -149,7 +154,7 @@ func (app *App) IndexHandler() http.HandlerFunc {
 		locals := app.buildLocals(struct {
 			Posts        []*Post
 			ContentQuery string
-			TagQuery     string
+			TagQuery     []string
 		}{
 			Posts:        posts,
 			ContentQuery: searchQ,

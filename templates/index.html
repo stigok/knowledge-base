@@ -3,11 +3,12 @@
 {{ with .Locals }}
 
 <h1>Posts</h1>
-{{ if .TagQuery }}
-<h2>Matching tag: {{ .TagQuery }}</h2>
-{{ end }}
-{{ if .ContentQuery }}
-<h2>Matching content: {{ .ContentQuery }}</h2>
+{{ if .ContentQuery | or .TagQuery }}
+<p>
+  Matching
+  {{ if .ContentQuery -}}text <i>{{ .ContentQuery }}</i>{{ end }}
+  {{ if .TagQuery -}}with tags {{ range .TagQuery }}<span class="badge bg-primary">{{ . }}</span>{{ end }}{{ end }}
+</p>
 {{ end }}
 
 
