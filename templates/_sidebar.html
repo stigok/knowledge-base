@@ -20,7 +20,7 @@
 
 <ul class="list-unstyled">
   {{ range .AllTags }}
-  <li class="badge bg-success"><a href="/?tags={{ . }}">{{ . }}</a></li>
+  <li class="badge bg-success"><a href="/?tags={{ . }}" hx-get="/?tags={{ . }}" hx-target="#main" hx-select="#main">{{ . }}</a></li>
   {{ else }}
   <li>(no tags)</li>
   {{ end }}

@@ -14,7 +14,7 @@
 
 {{ range .Posts }}
 <div>
-  <strong>{{ .CreatedTime.Format "2006-01-02" }}</strong> <a href="/posts/{{ .ID }}">{{ .Title }}</a>
+  <strong>{{ .CreatedTime.Format "2006-01-02" }}</strong> <a href="/posts/{{ .ID }}" hx-get="/posts/{{ .ID }}" hx-target="#main" hx-select="#main">{{ .Title }}</a>
 </div>
 {{ else }}
 <p>No posts to show.</p>
