@@ -47,6 +47,12 @@ func main() {
 	mustCreateDataDir(dataDir)
 	app := NewApp(dataDir, listenAddr)
 
+	posts, err := app.posts.ListPosts(nil)
+	if err != nil {
+		log.Fatalf("failed to list posts: %v", err)
+	}
+	log.Printf("Using datadir '%s' with %d posts", dataDir, len(posts))
+
 	// TODO: configure server params
 	log.Println("Starting HTTP server on", app.listenAddr)
 	panic(http.ListenAndServe(app.listenAddr, app))
