@@ -243,51 +243,41 @@ func (app *App) AccessLogHandler(next http.Handler) http.Handler {
 }
 
 func (app *App) StaticHandler(next http.Handler) http.Handler {
-	readFile := func(path string) ([]byte, error) {
-		f, err := staticFS.Open(path)
-		if err != nil {
-			return nil, err
-		}
-		defer f.Close()
-
-		b, err := io.ReadAll(f)
-		if err != nil {
-			return nil, err
-		}
-
-		return b, nil
-	}
-
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		isStatic := strings.HasPrefix(r.URL.Path, "/static/")
-		isFavicon := r.URL.Path == "/favicon.ico"
+		path := strings.TrimPrefix(r.URL.Path, "/")
+
+		isStatic := strings.HasPrefix(path, "static/")
+		isFavicon := path == "favicon.ico"
 
 		if !isStatic && !isFavicon {
 			next.ServeHTTP(w, r)
 			return
 		}
 
-		path := strings.TrimPrefix(r.URL.Path, "/")
 		if isFavicon {
 			path = "static/favicon.ico"
 		}
-		b, err := readFile(path)
+
+		f, err := staticFS.Open(path)
 		if err != nil {
 			next.ServeHTTP(w, r)
 			return
 		}
+		defer f.Close()
 
-		parts := strings.Split(filepath.Base(path), ".")
-		contentType := mime.TypeByExtension("." + parts[len(parts)-1])
+		pparts := strings.Split(filepath.Base(path), ".")
+		ext := pparts[len(pparts)-1]
+		contentType := mime.TypeByExtension("." + ext)
 		if contentType == "" {
 			w.Header().Set("Content-Type", "text/plain")
 		} else {
 			w.Header().Set("Content-Type", contentType)
 		}
 
-		_, err = w.Write(b)
+		_, err = io.Copy(w, f)
 		if err != nil {
-			log.Printf("error: StaticHandler: %v", err)
+			log.Printf("error: StaticHandler: %v (%s)", err, path)
+			return
 		}
 	})
 }
