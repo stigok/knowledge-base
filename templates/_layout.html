@@ -13,15 +13,28 @@
 
   <script src="/static/js/bootstrap.bundle.min.js"></script>
   <!--<script src="/static/js/jquery-3.6.0.slim.min.js"></script>-->
-  <script src="/static/js/htmx-1.8.4.min.js"></script>
+  <!--<script src="/static/js/htmx-1.8.4.min.js"></script>-->
+  <script>
+    function onload() {
+      console.info("DOM loaded");
+      document.querySelector("body").classList.remove("nojs")
+    }
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", onload);
+    } else {
+      onload();
+    }
+  </script>
 </head>
 
-<body>
+<!-- The nojs class will be removed from the body element in onload event when JavaScript is enabled -->
+<body class="nojs">
   <div id="wrapper">
     <nav class="navbar navbar-expand-sm navbar-light" style="background-color: #e3f2fd;">
       <div class="container-fluid">
         <a class="navbar-brand" href="/">kbase</a>
-        <svg id="spinner" class="me-2 htmx-indicator" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <svg id="spinner" class="me-2 htmx-indicator nojs-hidden" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <circle cx="50" cy="50" r="45"/>
         </svg>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">

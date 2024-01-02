@@ -8,6 +8,10 @@ html, body, #wrapper {
   flex-direction: column;
 }
 
+.nojs .nojs-hidden {
+  display: none;
+}
+
 /* Overrides */
 .navbar-brand {
   margin-right: 0.5rem;
