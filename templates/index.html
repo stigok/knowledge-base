@@ -7,7 +7,7 @@
 <p>
   Matching
   {{ if .ContentQuery -}}text <i>{{ .ContentQuery }}</i>{{ end }}
-  {{ if .TagQuery -}}with tags {{ range .TagQuery }}<span class="badge bg-primary">{{ . }}</span>{{ end }}{{ end }}
+  {{ if .TagQuery -}}tags {{ range .TagQuery }}<span class="badge bg-primary">{{ . }}</span>{{ end }}{{ end }}
 </p>
 {{ end }}
 
